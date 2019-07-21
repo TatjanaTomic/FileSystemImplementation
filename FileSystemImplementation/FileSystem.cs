@@ -13,12 +13,15 @@ namespace FileSystemImplementation
         public static readonly int MAX_SIZE_OF_FILE_SYSTEM = 20 * 1024 * 1024; //maksimalna velicina fajl sistema u bajtovima (20MB)
         public static readonly int MAX_SIZE_OF_FILE = 64 * 1024; //maksimalna velicina jedne datoteke u bajtovima (64kB)
         public static readonly int MIN_SIZE_OF_BLOCK = 5; //minimalna velicina jednog bloka za cuvanje sadrzaja datoteke
-        public static readonly int initialUsedSpace = 30; //prilikom kreiranja fajl sistema velicina je 30 bajta zbog upisivanja inicijalnih vrijednosti o fajl sistemu
-        public static int numberOfFiles = 0;
-        public static int numberOfDirectories = 0;
+        public static readonly int initialUsedSpace = 50; //prilikom kreiranja fajl sistema velicina je 50 bajta zbog upisivanja inicijalnih vrijednosti o fajl sistemu
+        public static int numberOfFiles = 0; //ukupan broj fajlova na fajl sistemu
+        public static int numberOfDirectories = 0; //ukupan broj direktorijuma na fajl sistemu
         public static int usedSpace;
         public static int freeSpace;
-        public static int EXIT = 0;
+        public static readonly int EXIT = 0;
+        public static readonly string separator = "~~~DATA--SECTION~~~";
+
+        public static List<string> contentOfRootFolder = new List<string>();
 
         //podaci za datoteku
         public string fileName;
@@ -37,6 +40,10 @@ namespace FileSystemImplementation
             {
                 CreateFileSystem();
             }
+            else
+            {
+                LoadData();
+            }
 
             while (true)
             {
@@ -52,7 +59,22 @@ namespace FileSystemImplementation
                         Environment.Exit(EXIT);
                         break;
 
-                    case "help":
+                    case "ls":
+                        GetContent();
+                        break;
+
+                    case "cd": //dodatna komanda
+                        try
+                        {
+                            OpenDirectory(words[1]);
+                        }
+                        catch (Exception)
+                        {
+                            Console.WriteLine("Greska - Netacan unos! Unesite \"help cd\" za pomoc\n");
+                        }
+                        break;
+
+                    case "help": //dodatna komanda
                         try
                         {
                             Help(words[1]);
@@ -63,7 +85,7 @@ namespace FileSystemImplementation
                         }
                         break;
 
-                    case "df":
+                    case "df": //dodatna komanda
                         try
                         {
                             bool flag = (words[1] == "-h"); 
@@ -86,7 +108,7 @@ namespace FileSystemImplementation
                     case "mkdir":
                         try
                         {
-                            //MakeDirectory(path, words[1]);
+                            MakeDirectory(words[1]);
                         }
                         catch(Exception)
                         {
@@ -101,9 +123,6 @@ namespace FileSystemImplementation
                         break;
 
                     case "get":
-                        break;
-
-                    case "ls":
                         break;
 
                     case "cp":
@@ -134,42 +153,73 @@ namespace FileSystemImplementation
             }
         }
 
-        private void GetRootInformation(int a = 0)
+        private void GetContent(string path = "root/")
         {
             StreamReader reader = new StreamReader(new FileStream("FileSystem.bin", FileMode.Open));
+            string _ = reader.ReadLine(); //preskacem prvu liniju
+
+            Regex regex = new Regex(@"[A-Za-z0-9.-]+");
             string line = reader.ReadLine();
-
-            Regex regex = new Regex(@"HOME~([0-9]+)~([0-9]+)~([0-9]+)~([0-9]+)~([0-9]+)");
-            Match match = regex.Match(line);
-
-            if (a == 1)
+            while (!line.Contains(separator))
             {
-                Console.WriteLine("Slobodan memorijski prostor: " + match.Groups[4] + "b\n");
+                MatchCollection matches = regex.Matches(line);
+                if (matches[4].Value == "1") //Ako je dubina jednako 1, tj. ako se dati folder nalazi u root folderu onda se doda njegov naziv u listu sadrzaja root foldera
+                {
+                    contentOfRootFolder.Add(matches[2].Value);
+                }
+                line = reader.ReadLine();
             }
-            else
-            {
-                Console.WriteLine("Broj direktorijuma: " + match.Groups[1]);
-                Console.WriteLine("Broj datoteka: " + match.Groups[2]);
-                Console.WriteLine("Iskoriscen memorijski prostor: " + match.Groups[3] + "b");
-                Console.WriteLine("Slobodan memorijski prostor: " + match.Groups[4] + "b");
-                Console.WriteLine("Ukupna velicina fajl sistema: " + match.Groups[5] + "b\n");
-            }
+
 
             reader.Close();
-
-            //Drugi nacin
-            //Regex regex2 = new Regex(@"[0-9]+");
-            //MatchCollection matches = regex2.Matches(line);
-            //Console.WriteLine(matches[0]);
-            //Console.WriteLine(matches[1]);
-            //Console.WriteLine(matches[2]);
-            //Console.WriteLine(matches[3]);
-
         }
 
-        private void MakeDirectory(string name, string path = "\root")
+        private void OpenDirectory(string name, string path = "root/")
         {
-           throw new NotImplementedException();
+            throw new NotImplementedException();
+        }
+
+        private void LoadData()
+        {
+            StreamReader reader = new StreamReader(new FileStream("FileSystem.bin", FileMode.Open));
+            string firstLine = reader.ReadLine();
+
+            Regex regex = new Regex(@"HOME~([0-9]+)~([0-9]+)~([0-9]+)~([0-9]+)");
+            Match match = regex.Match(firstLine);
+
+            string _numberOfDirectories = match.Groups[1].Value;
+            numberOfDirectories = Int32.Parse(_numberOfDirectories);
+
+            string _numberOfFiles = match.Groups[2].Value;
+            numberOfFiles = Int32.Parse(_numberOfFiles);
+
+            string _usedSpace = match.Groups[3].Value;
+            usedSpace = Int32.Parse(_usedSpace);
+
+            string _freeSpace = match.Groups[4].Value;
+            freeSpace = Int32.Parse(_freeSpace);
+
+            Regex regex2 = new Regex(@"[A-Za-z0-9.-]+");
+            string line = reader.ReadLine();
+            while (!line.Contains(separator))
+            {
+                MatchCollection matches = regex2.Matches(line);
+                if (matches[4].Value == "1") //Ako je dubina jednako 1, tj. ako se dati folder nalazi u root folderu onda se doda njegov naziv u listu sadrzaja root foldera
+                {
+                    contentOfRootFolder.Add(matches[2].Value);
+                }
+                line = reader.ReadLine();
+            }
+            reader.Close();
+        }
+
+        private void CreateFileSystem()
+        {
+            StreamWriter writer = new StreamWriter(new FileStream("FileSystem.bin", FileMode.Create));
+            writer.Write("HOME~" + numberOfDirectories + "~" + numberOfFiles + "~");
+            writer.WriteLine(initialUsedSpace + "~" + (MAX_SIZE_OF_FILE_SYSTEM - initialUsedSpace) + "~" + MAX_SIZE_OF_FILE_SYSTEM);
+            writer.Write("~~~DATA--SECTION~~~");
+            writer.Close();
         }
 
         private void Help(string method)
@@ -180,6 +230,10 @@ namespace FileSystemImplementation
                     Console.WriteLine("Lista svih ocija: mkdir create put get ls cp mv rename echo cat rm stat df");
                     Console.WriteLine("Za detaljno uputstvo unesite \"help naziv_opcije\"");
                     Console.WriteLine("Za izlaz iz programa unesite \"exit\"\n");
+                    break;
+
+                case "cd":
+                    Console.WriteLine("Omogucava pozicioniranje u zadati poddirektorijum, prilikom poziva potrebno je navesti naziv_komande naziv_poddirektorijuma");
                     break;
 
                 case "df":
@@ -243,24 +297,142 @@ namespace FileSystemImplementation
             
         }
 
-        private void CreateFileSystem()
+        private void GetRootInformation(int a = 0)
         {
-            StreamWriter writer = new StreamWriter(new FileStream("FileSystem.bin", FileMode.OpenOrCreate));
-            
-            writer.Write('H'); writer.Write('O'); writer.Write('M'); writer.Write('E');
-            writer.Write('~');
-            writer.Write(numberOfDirectories);
-            writer.Write('~');
-            writer.Write(numberOfFiles);
-            writer.Write('~');
-            writer.Write(initialUsedSpace);
-            writer.Write('~');
-            writer.Write(MAX_SIZE_OF_FILE_SYSTEM - initialUsedSpace);
-            writer.Write('~');
-            writer.Write(MAX_SIZE_OF_FILE_SYSTEM);
-            writer.Write('\n');
+            StreamReader reader = new StreamReader(new FileStream("FileSystem.bin", FileMode.Open));
+            string line = reader.ReadLine();
+
+            Regex regex = new Regex(@"HOME~([0-9]+)~([0-9]+)~([0-9]+)~([0-9]+)~([0-9]+)");
+            Match match = regex.Match(line);
+
+            if (a == 1)
+            {
+                Console.WriteLine("Slobodan memorijski prostor: " + match.Groups[4] + "b\n");
+            }
+            else
+            {
+                Console.WriteLine("Broj direktorijuma: " + match.Groups[1]);
+                Console.WriteLine("Broj datoteka: " + match.Groups[2]);
+                Console.WriteLine("Iskoriscen memorijski prostor: " + match.Groups[3] + "b");
+                Console.WriteLine("Slobodan memorijski prostor: " + match.Groups[4] + "b");
+                Console.WriteLine("Ukupna velicina fajl sistema: " + match.Groups[5] + "b\n");
+            }
+
+            reader.Close();
+
+            //Drugi nacin
+            //Regex regex2 = new Regex(@"[0-9]+");
+            //MatchCollection matches = regex2.Matches(line);
+            //Console.WriteLine(matches[0]);
+            //Console.WriteLine(matches[1]);
+            //Console.WriteLine(matches[2]);
+            //Console.WriteLine(matches[3]);
+
+        }
+
+        private void MakeDirectory(string name, string _ = "root/")
+        {
+            name = CheckName(name);
+
+            Directory directory = new Directory(name, getNewId(), DateTime.Today, DateTime.Today, DateTime.Today);
+            directory.WriteToFile();
+            numberOfDirectories++;
+            Update();
+        }
+
+        private string CheckName(string name)
+        {
+            while(true)
+            {
+                bool flag = false; // ovaj flag sam dodala jer kad se unese naziv koji vec postoji program ucita novi naziv i prelazi u drugi else if uslov zbog neslaganja matcha i naziva
+                Match match = (new Regex(@"[A-Za-z0-9.-]+")).Match(name); //naziv moze sadrzati samo slova, brojeve, . i -
+
+                if (match.Value == name && !contentOfRootFolder.Contains(name))
+                {
+                    return name;
+                }
+                else if (match.Value == name && contentOfRootFolder.Contains(name) && !flag)
+                {
+                    Console.WriteLine("Greska - vec postoji datoteka ili direktorijum sa datim nazivom");
+                    Console.WriteLine("Unesite novi naziv direktorijuma");
+                    name = Console.ReadLine();
+                    flag = true;
+                }
+                else if (match.Value != name && !flag)
+                {
+                    Console.WriteLine("Naziv moze sadrzati velika i mala slova, cifre, . i -");
+                    Console.WriteLine("Unesite novi naziv direktorijuma");
+                    name = Console.ReadLine();
+                }
+            }
+        }
+
+        private void Update()
+        {
+            StreamReader reader1 = new StreamReader(new FileStream("FileSystem.bin", FileMode.Open));
+            string firstLine = reader1.ReadLine();
+            string content = reader1.ReadToEnd();
+            reader1.Close();
+
+
+            //procita sve podatke o datotekama i direktorijumima u root-u i upise u listu - sadrzaj root direktorijuma
+            StreamReader reader = new StreamReader(new FileStream("FileSystem.bin", FileMode.Open));
+            _ = reader.ReadLine();
+            Regex regex2 = new Regex(@"[A-Za-z0-9\/:.-]+");
+            string line = reader.ReadLine();
+            while (!line.Contains(separator))
+            {
+                MatchCollection matches = regex2.Matches(line);
+                if (matches[4].Value == "1") //Ako je dubina jednako 1, tj. ako se dati folder nalazi u root folderu onda se doda njegov naziv u listu sadrzaja root foldera
+                {
+                    if(!contentOfRootFolder.Contains(matches[2].Value)) //dodaje samo novi direktorijum, bez uslova bi dodavao sav sadrzaj svaki put kad se pozove update pa bi bilo dupliranja podataka
+                        contentOfRootFolder.Add(matches[2].Value);
+                    
+                }
+                line = reader.ReadLine();
+            }
+            reader.Close();
+
+
+            usedSpace = firstLine.Length + content.Length + 4; // 4 dodajem zbog razlike u stvarnoj velicini fajla i duzinama ovih stringova, a razlika postoji zbog broja bita rezervisanih za newline
+            freeSpace = MAX_SIZE_OF_FILE_SYSTEM - usedSpace;
+
+
+            StreamWriter writer = new StreamWriter(new FileStream("FileSystem.bin", FileMode.Open));
+            writer.Write("HOME~" + numberOfDirectories + "~" + numberOfFiles + "~");
+            writer.WriteLine(usedSpace + "~" + (MAX_SIZE_OF_FILE_SYSTEM - usedSpace) + "~" + MAX_SIZE_OF_FILE_SYSTEM);
+            writer.WriteLine(content);
             writer.Close();
         }
+
+        private int getNewId()
+        {
+            StreamReader reader2 = new StreamReader(new FileStream("ListOfIdentificators.txt", FileMode.OpenOrCreate));
+            string content = reader2.ReadToEnd();
+            reader2.Close();
+
+            StreamReader reader = new StreamReader(new FileStream("ListOfIdentificators.txt", FileMode.OpenOrCreate));
+            string _lastId = reader.ReadLine();
+            reader.Close();
+
+            int lastId;
+            if(_lastId != null)
+            {
+                lastId = Int32.Parse(_lastId);
+            }
+            else
+            {
+                lastId = 0;
+            }
+
+            int newId = lastId + 1;
+
+            StreamWriter writer = new StreamWriter(new FileStream("ListOfIdentificators.txt", FileMode.OpenOrCreate));
+            writer.WriteLine(newId + "\r\n" + content);
+            writer.Close();
+
+            return newId;
+        } 
     }
 }
 
