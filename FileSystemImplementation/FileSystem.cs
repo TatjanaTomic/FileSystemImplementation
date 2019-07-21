@@ -23,16 +23,6 @@ namespace FileSystemImplementation
 
         public static List<string> contentOfRootFolder = new List<string>();
 
-        //podaci za datoteku
-        public string fileName;
-        public readonly int fileId;
-        public string filePath;
-        public int fileDepth;
-        public DateTime dateCreated;
-        public DateTime lastTimeModified;
-        public DateTime lastTimeOpened;
-
-
         public void ExecuteFileSystem()
         {
 

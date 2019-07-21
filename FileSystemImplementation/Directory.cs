@@ -18,9 +18,9 @@ namespace FileSystemImplementation
         public readonly int directoryId;
         public string directoryPath;
         public int directoryDepth;
-        public DateTime dirDateCreated;
-        public DateTime dirLastTimeModified;
-        public DateTime dirLastTimeOpened;
+        public DateTime dateCreated;
+        public DateTime lastTimeModified;
+        public DateTime lastTimeOpened;
         public string[] contentOfDir = { " " };
 
         public Directory(string name, int id,  DateTime dateC, DateTime dateM, DateTime dateO, string path = "root/", int depth = 1)
@@ -29,9 +29,9 @@ namespace FileSystemImplementation
             directoryId = id;
             directoryPath = path + name;
             directoryDepth = depth;
-            dirDateCreated = dateC;
-            dirLastTimeModified = dateM;
-            dirLastTimeOpened = dateO;
+            dateCreated = dateC;
+            lastTimeModified = dateM;
+            lastTimeOpened = dateO;
         }
 
         internal void WriteToFile()
@@ -44,7 +44,7 @@ namespace FileSystemImplementation
             StreamWriter writer = new StreamWriter(new FileStream("FileSystem.bin", FileMode.Open));
             writer.WriteLine(firstLine);
             writer.Write("dir~" + directoryId + "~" + directoryName + "~" + directoryPath + "~" + directoryDepth + "~");
-            writer.Write(dirDateCreated.ToString() + "~" + dirLastTimeModified.ToString() + "~" + dirLastTimeOpened.ToString() + "~");
+            writer.Write(dateCreated.ToString() + "~" + lastTimeModified.ToString() + "~" + lastTimeOpened.ToString() + "~");
             foreach (var str in contentOfDir)
                 writer.Write(str + "~");
             writer.Write("\r\n" + contentOfFS);
