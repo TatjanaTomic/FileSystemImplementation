@@ -7,7 +7,7 @@ using System.Threading.Tasks;
 
 namespace FileSystemImplementation
 {
-    class File
+    class FileOnFS
     {
         public string fileName;
         public readonly int fileId;
@@ -18,12 +18,12 @@ namespace FileSystemImplementation
         public DateTime lastTimeOpened;
         public string[] information = { " " };
 
-        public File(string name, int id, DateTime dateC, DateTime dateM, DateTime dateO, string path = "root/", int depth = 1)
+        public FileOnFS(string name, int id, DateTime dateC, DateTime dateM, DateTime dateO, string path = "root/", string depth = "1")
         {
             fileName = name;
             fileId = id;
             filePath = path + name;
-            fileDepth = depth;
+            fileDepth = Int32.Parse(depth);
             dateCreated = dateC;
             lastTimeModified = dateM;
             lastTimeOpened = dateO;
@@ -44,10 +44,6 @@ namespace FileSystemImplementation
                 writer.Write(str + "~");
             writer.Write("\r\n" + contentOfFS);
             writer.Close();
-
         }
-
-
-
     }
 }

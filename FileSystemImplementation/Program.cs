@@ -8,8 +8,6 @@ using System.Threading.Tasks;
 namespace FileSystemImplementation
 {
 
-    //TODO: Dodati komandu df koja prikazuje trenutno zauzece memorije na disku
-
 
     class Program
     { 
@@ -22,3 +20,20 @@ namespace FileSystemImplementation
 
     }
 }
+
+//TASKS:
+//help - DONE
+//df - DONE
+//cd
+//mkdir - uradjeno ali samo za root
+//create
+//put
+//get
+//ls - uradjeno za root
+//cp
+//mv
+//rename
+//echo
+//cat
+//rm
+//stat

@@ -7,10 +7,9 @@ using System.Threading.Tasks;
 
 namespace FileSystemImplementation
 {
-    //TODO: Ograniciti duzinu naziva
-    //TODO: Pocetni sadrzaj direktorijuma treba da bude space a ne prazan string kasnije zbog meciranja
-    //TODO: Sadrzaj direktorijuma treba cuvati u listi a ne statickom nizu stringova!!!
-    //DONE: Kod update-a moram dodavati u listu (sadrzaj root foldera) ako vec ne postoji ta datoteka/direktorijum
+    //TODO: Dodati mogucnost za mkdir i create da se kreiraju na unesenoj putanji
+    //DONE: Ograniciti duzinu naziva - KADA BUDEM PRAVILA MakeFile() treba da provjerim duzinu prije poziva checkName()
+    //TODO: Sadrzaj direktorijuma treba cuvati u listi, a ne statickom nizu stringova!!!
     //DONE: Promijeni putanje direktorijuma - path+name i onda u update i load data reba promijeniti uslov "~root/~" jer nece nikad nista mecirati
     class Directory
     {
@@ -23,12 +22,12 @@ namespace FileSystemImplementation
         public DateTime lastTimeOpened;
         public string[] contentOfDir = { " " };
 
-        public Directory(string name, int id,  DateTime dateC, DateTime dateM, DateTime dateO, string path = "root/", int depth = 1)
+        public Directory(string name, int id,  DateTime dateC, DateTime dateM, DateTime dateO, string path = "root/", string depth = "1")
         {
             directoryName = name;
             directoryId = id;
             directoryPath = path + name;
-            directoryDepth = depth;
+            directoryDepth = Int32.Parse(depth);
             dateCreated = dateC;
             lastTimeModified = dateM;
             lastTimeOpened = dateO;
