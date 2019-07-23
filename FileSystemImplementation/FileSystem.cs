@@ -57,7 +57,7 @@ namespace FileSystemImplementation
                             }
                             else
                             {
-                                Console.WriteLine("Greska - Netacan unos! Unesite \"help ls\" za pomoc\n");
+                                Console.WriteLine("Greska - Netacan unos! Unesite \"help ls\" za pomoc");
                             }
                             break;
                         }
@@ -70,11 +70,11 @@ namespace FileSystemImplementation
                             }
                             else if (words.Count() == 2 && words[1] == "..")
                             {
-                                Console.WriteLine("Greska - Netacan unos! Trenutno ste pozicionirani u root direktorijumu fajl sistema\n");
+                                Console.WriteLine("Greska! Trenutno ste pozicionirani u root direktorijumu fajl sistema");
                             }
                             else
                             {
-                                Console.WriteLine("Greska - Netacan unos! Unesite \"help cd\" za pomoc\n");
+                                Console.WriteLine("Greska - Netacan unos! Unesite \"help cd\" za pomoc");
                             }
                             break;
                         }
@@ -91,7 +91,7 @@ namespace FileSystemImplementation
                             }
                             else
                             {
-                                Console.WriteLine("Greska - nepoznata opcija! Za pomoc pri radu unesite \"help\"\n");
+                                Console.WriteLine("Greska - nepoznata opcija! Za pomoc pri radu unesite \"help\"");
                             }
                             break;
                         }
@@ -108,30 +108,47 @@ namespace FileSystemImplementation
                             }
                             else
                             {
-                                Console.WriteLine("Greska - Netacan unos! Unesite \"help df\" za pomoc\n");
+                                Console.WriteLine("Greska - Netacan unos! Unesite \"help df\" za pomoc");
                             }
                             break;
                         }
 
-                    case "mkdir": //NEDOVRSENO
+                    case "mkdir": //NEDOVRSENO 
                         {
                             if(words.Count() == 2)
                             {
+                                MakeDirectory(words[1]); //Znaci ako odavde pozivam mkdir to znaci da se unutar root-a kreira direktorijum sa nazivom words[1] i on ce biti na dubini 1
+                            }
+                            else if(words.Count() == 3 && words[2] == "root/")
+                            {
                                 MakeDirectory(words[1]);
                             }
-                            else if(words.Count() == 3)
+                            else if(words.Count() == 3 && words[3] != "root/")
                             {
-                                //TODO: TREBA DODATI POZIV ZA KREIRANJE NA ZADATOJ PUTANJI
+                                Console.WriteLine("Greska - nije moguce kreirati direktorijum na zadatoj putanji");
                             }
                             else
                             {
-                                Console.WriteLine("Greska - Netacan unos! Unesite \"help mkdir\" za pomoc\n");
+                                Console.WriteLine("Greska - Netacan unos! Unesite \"help mkdir\" za pomoc");
                             }
                             break;
                         }
 
                     case "create":
                         break;
+
+                    case "rename":
+                        {
+                            if(words.Count() == 3)
+                            {
+                                Rename(words[1], words[2]);
+                            }
+                            else
+                            {
+                                Console.WriteLine("Greska - Netacan unos! Unesite \"help rename\" za pomoc");
+                            }
+                        break;
+                        }
 
                     case "put":
                         break;
@@ -143,9 +160,6 @@ namespace FileSystemImplementation
                         break;
 
                     case "mv":
-                        break;
-
-                    case "rename":
                         break;
 
                     case "echo":
@@ -161,39 +175,98 @@ namespace FileSystemImplementation
                         break;
 
                     default:
-                        Console.WriteLine("Greska - nepoznata opcija! Za pomoc pri radu unesite \"help\"\n");
+                        Console.WriteLine("Greska - nepoznata opcija! Za pomoc pri radu unesite \"help\"");
                         break;
                 }
             }
         }
 
-        private void GetContentOfDirectory(string depth = "1", string path = "root/")
+
+        private void Rename(string name, string newName, string path ="root/")
+        {
+            if(!Exists(name, path))
+            {
+                Console.WriteLine("Greska - ne postoji direktorijum/datoteka sa nazivom {0} na trenutnoj putanji", name);
+                return;
+            }
+
+            newName = CheckName(newName, path);
+
+            StreamReader reader = new StreamReader(new FileStream("FileSystem.bin", FileMode.Open));
+            Queue<string> content1 = new Queue<string>();
+            string line;
+
+            do
+            {
+                line = reader.ReadLine();
+                if(line.Contains("~" + path + name + "~"))
+                {
+                    line = line.Replace(name, newName);
+                    break;
+                }
+                else
+                {
+                    content1.Enqueue(line);
+                }
+
+            }
+            while (!line.Contains(separator));
+
+            string content2 = reader.ReadToEnd();
+            reader.Close();
+
+            string content = "";
+            while (content1.Count != 0)
+            {
+                content += content1.Dequeue() + "\r\n";
+            }
+            content += line + "\r\n";
+            content += content2;
+
+            StreamWriter writer = new StreamWriter(new FileStream("FileSystem.bin", FileMode.Truncate));
+            writer.Write(content);
+            writer.Close();
+
+            Update();
+        }
+
+        private void GetContentOfDirectory(string path = "root/")
         {
             StreamReader reader = new StreamReader(new FileStream("FileSystem.bin", FileMode.Open));
             string _ = reader.ReadLine(); //preskacem prvu liniju
 
-            Console.WriteLine("Tip - naziv - putanja - datum kreiranja - datum posljednje modifikacije - datum posljednjeg otvaranja");
+            Console.WriteLine("Tip - naziv - putanja - datum kreiranja");
                 
             Regex regex = new Regex(@"[A-Za-z0-9/ :.-]+");
             string line = reader.ReadLine();
-            while (!line.Contains(separator))
+            while(!line.Contains(separator))
             {
                 MatchCollection matches = regex.Matches(line);
-                if (depth == "1" && matches[4].Value == depth)  //iscitava one cija je dubina 1 jer se oni nalaze unutar root-a - to znaci da je komanda ls pozvana iz root-a
+                if(matches[0].Value == "dir" && matches[3].Value.Contains(path))
                 {
-                    Console.WriteLine(matches[0].Value + " - " + matches[2].Value + " - " + matches[3].Value + " - " + matches[5].Value + " - " + matches[6].Value + " - " + matches[7].Value);
-                }
-                else if( depth == "2" && matches[3].Value.Contains(path))
-                {
-                    Console.WriteLine(matches[0].Value + " - " + matches[2].Value + " - " + matches[3].Value + " - " + matches[5].Value + " - " + matches[6].Value + " - " + matches[7].Value);
+                    Console.WriteLine(matches[0].Value + " - " + matches[2].Value + " - " + matches[3].Value + " - " + matches[4].Value);
                 }
                 line = reader.ReadLine();
             }
+            
+            //while (!line.Contains(separator))
+            //{
+            //    MatchCollection matches = regex.Matches(line);
+            //    if (depth == 1 && matches[4].Value == depth.ToString())  //iscitava one cija je dubina 1 jer se oni nalaze unutar root-a - to znaci da je komanda ls pozvana iz root-a
+            //    {
+            //        Console.WriteLine(matches[0].Value + " - " + matches[2].Value + " - " + matches[3].Value + " - " + matches[5].Value + " - " + matches[6].Value + " - " + matches[7].Value);
+            //    }
+            //    else if( depth == 2 && matches[3].Value.Contains(path))
+            //    {
+            //        Console.WriteLine(matches[0].Value + " - " + matches[2].Value + " - " + matches[3].Value + " - " + matches[5].Value + " - " + matches[6].Value + " - " + matches[7].Value);
+            //    }
+            //    line = reader.ReadLine();
+            //}
 
             reader.Close();
         }
 
-        private void OpenDirectory(string name, string path = "root/", string depth = "1") //path je ovdje putanja sa koje se poziva funkcija cd
+        private void OpenDirectory(string name, string path = "root/") //path je ovdje putanja sa koje se poziva funkcija cd
         {
             StreamReader reader = new StreamReader(new FileStream("FileSystem.bin", FileMode.Open));
             _ = reader.ReadLine();
@@ -204,7 +277,7 @@ namespace FileSystemImplementation
             while(!line.Contains(separator)) //Prode kroz MFT(zapisi o datotekama i direktorijumima) i pretrazi da li postoji dati folder
             {
                 MatchCollection matches = regex2.Matches(line);
-                if (matches[0].Value == "dir" && matches[2].Value == name && matches[3].Value == (path + name) && matches[4].Value == "1")
+                if (matches[0].Value == "dir" && matches[2].Value == name && matches[3].Value == (path + name))
                 {
                     flag = true;
                     break;
@@ -223,7 +296,7 @@ namespace FileSystemImplementation
                 //TODO: ISPRAVITI WHILE PELJU
                 while(true)
                 {
-                    Console.Write("HOME/" + name + ">");
+                    Console.Write(path.Replace("root", "HOME") + name + ">");
 
                     string inputLine = Console.ReadLine();
                     string[] words = inputLine.Split(' ');
@@ -238,11 +311,11 @@ namespace FileSystemImplementation
                             {
                                 if (words.Count() == 1)
                                 {
-                                    GetContentOfDirectory("2", path + name + "/"); //trebaju mi fajlovi/direktorijumi koji su na dubini 2 i cija je putanja pocinje sa "root/otvoreni_direktorijum/"
+                                    GetContentOfDirectory(path + name + "/"); //trebaju mi fajlovi/direktorijumi koji su na dubini 2 i cija je putanja pocinje sa "root/otvoreni_direktorijum/"
                                 }
                                 else
                                 {
-                                    Console.WriteLine("Greska - Netacan unos! Unesite \"help ls\" za pomoc\n");
+                                    Console.WriteLine("Greska - Netacan unos! Unesite \"help ls\" za pomoc");
                                 }
                                 break;
                             }
@@ -251,7 +324,7 @@ namespace FileSystemImplementation
                             {
                                 if (words.Count() == 2 && words[1] != "..")
                                 {
-                                    OpenDirectory(words[1]); //????????????????????????????????????????????????
+                                    OpenDirectory(words[1], path + name + "/"); //Ako iz open directory pozivam opet OpenDirectory() znači da sa putanje path+name otvaram folder sa nazivom words[1] koji se nalazi na dubini 2
                                 }
                                 else if (words.Count() == 2 && words[1] == "..")
                                 {
@@ -259,7 +332,7 @@ namespace FileSystemImplementation
                                 }
                                 else
                                 {
-                                    Console.WriteLine("Greska - Netacan unos! Unesite \"help cd\" za pomoc\n");
+                                    Console.WriteLine("Greska - Netacan unos! Unesite \"help cd\" za pomoc");
                                 }
                                 break;
                             }
@@ -276,47 +349,79 @@ namespace FileSystemImplementation
                                 }
                                 else
                                 {
-                                    Console.WriteLine("Greska - nepoznata opcija! Za pomoc pri radu unesite \"help\"\n");
+                                    Console.WriteLine("Greska - nepoznata opcija! Za pomoc pri radu unesite \"help\"");
                                 }
                                 break;
                             }
 
                         case "df": //VALJDA JE DOBRO
                             {
-                                if (words.Count() == 1)
+                                if (words.Count() == 1) //df mi je samo za slobodan memorijski prostor
                                 {
-                                    GetRootInformation(1);
+                                    GetRootInformation(1); //jedinicu saljem kao neki flag da bi mi ispisalo samo slobodan mem. prostor
                                 }
-                                else if (words.Count() == 2 && words[1] == "-h")
+                                else if (words.Count() == 2 && words[1] == "-h") // df -h je za ispis svih podataka o fajl sistemu
                                 {
                                     GetRootInformation();
                                 }
                                 else
                                 {
-                                    Console.WriteLine("Greska - Netacan unos! Unesite \"help df\" za pomoc\n");
+                                    Console.WriteLine("Greska - Netacan unos! Unesite \"help df\" za pomoc");
                                 }
                                 break;
                             }
 
-                        case "mkdir": //DOBRO, ALI NEDOVRSENO
+                        case "mkdir":
                             {
-                                if (words.Count() == 2)
+                                if (words.Count() == 2) //Uneseno je mkdir naziv_direktorijuma unutar nekog otvorenog foldera
                                 {
-                                    MakeDirectory(words[1], path + name + "/", "2");
+                                    Console.WriteLine("Greska - nije moguce kreirati direktorijum na ovoj putanji. Pozicionirajte se u root folder ili unesite putanju \"root/\"");
                                 }
-                                else if (words.Count() == 3)
+                                else if(words.Count() == 3 && words[2] == "root/")
                                 {
-                                    //TODO: TREBA DODATI POZIV ZA KREIRANJE NA ZADATOJ PUTANJI
+                                    MakeDirectory(words[1]);
+                                }
+                                else if(words.Count() == 3 && words[2] != "root/")
+                                {
+                                    Console.WriteLine("Greska - nije moguce kreirati direktorijum na zadatoj putanji");
                                 }
                                 else
                                 {
-                                    Console.WriteLine("Greska - Netacan unos! Unesite \"help mkdir\" za pomoc\n");
+                                    Console.WriteLine("Greska - Netacan unos! Unesite \"help mkdir\" za pomoc");
                                 }
                                 break;
                             }
+                        //{
+                        //     if (words.Count() == 2)
+                        //     {
+                        //         MakeDirectory(words[1], path + name); //Znaci ako odavde pozivam mkdir znaci da se folder kreira na putanji path+name i on ce biti na dubini 2
+                        //     }
+                        //     else if (words.Count() == 3)
+                        //     {
+                        //         MakeDirectory(words[1], words[2]);
+                        //     }
+                        //    else
+                        //     {
+                        //         Console.WriteLine("Greska - Netacan unos! Unesite \"help mkdir\" za pomoc");
+                        //     }
+                        //     break;
+                        //}
 
                         case "create":
                             break;
+
+                        case "rename":
+                            {
+                                if (words.Count() == 3)
+                                {
+                                    Rename(words[1], words[2]);
+                                }
+                                else
+                                {
+                                    Console.WriteLine("Greska - Netacan unos! Unesite \"help rename\" za pomoc");
+                                }
+                                break;
+                            }
 
                         case "put":
                             break;
@@ -328,9 +433,6 @@ namespace FileSystemImplementation
                             break;
 
                         case "mv":
-                            break;
-
-                        case "rename":
                             break;
 
                         case "echo":
@@ -346,32 +448,33 @@ namespace FileSystemImplementation
                             break;
 
                         default:
-                            Console.WriteLine("Greska - nepoznata opcija! Za pomoc pri radu unesite \"help\"\n");
+                            Console.WriteLine("Greska - nepoznata opcija! Za pomoc pri radu unesite \"help\"");
                             break;
                     }
                 }
             }
         }
 
+        //NE DIRAJ NISTA - RADI
         private void LoadData()
         {
             StreamReader reader = new StreamReader(new FileStream("FileSystem.bin", FileMode.Open));
             string firstLine = reader.ReadLine();
             reader.Close();
 
-            Regex regex = new Regex(@"HOME~([0-9]+)~([0-9]+)~([0-9]+)~([0-9]+)");
-            Match match = regex.Match(firstLine);
+            Regex regex = new Regex(@"[0-9]+");
+            MatchCollection matches = regex.Matches(firstLine);
 
-            string _numberOfDirectories = match.Groups[1].Value;
+            string _numberOfDirectories = matches[0].Value;
             numberOfDirectories = Int32.Parse(_numberOfDirectories);
 
-            string _numberOfFiles = match.Groups[2].Value;
+            string _numberOfFiles = matches[1].Value;
             numberOfFiles = Int32.Parse(_numberOfFiles);
 
-            string _usedSpace = match.Groups[3].Value;
+            string _usedSpace = matches[2].Value;
             usedSpace = Int32.Parse(_usedSpace);
 
-            string _freeSpace = match.Groups[4].Value;
+            string _freeSpace = matches[4].Value;
             freeSpace = Int32.Parse(_freeSpace);
 
             //Regex regex2 = new Regex(@"[A-Za-z0-9.-]+");
@@ -387,15 +490,17 @@ namespace FileSystemImplementation
             //}
         }
 
+        //RADI I OVO
         private void CreateFileSystem()
         {
             StreamWriter writer = new StreamWriter(new FileStream("FileSystem.bin", FileMode.Create));
             writer.Write("HOME~" + numberOfDirectories + "~" + numberOfFiles + "~");
             writer.WriteLine(initialUsedSpace + "~" + (MAX_SIZE_OF_FILE_SYSTEM - initialUsedSpace) + "~" + MAX_SIZE_OF_FILE_SYSTEM);
-            writer.Write("~~~DATA--SECTION~~~");
+            writer.Write(separator);
             writer.Close();
         }
-
+        
+        //RADI
         private void Help(string method)
         {
             switch(method)
@@ -403,68 +508,68 @@ namespace FileSystemImplementation
                 case "help":
                     Console.WriteLine("Lista svih ocija: mkdir create put get ls cp mv rename echo cat rm stat df");
                     Console.WriteLine("Za detaljno uputstvo unesite \"help naziv_opcije\"");
-                    Console.WriteLine("Za izlaz iz programa unesite \"exit\"\n");
+                    Console.WriteLine("Za izlaz iz programa unesite \"exit\"");
                     break;
 
                 case "cd":
-                    Console.WriteLine("Omogucava pozicioniranje u zadati poddirektorijum, prilikom poziva potrebno je navesti naziv_komande naziv_poddirektorijuma");
+                    Console.WriteLine("Omogucava pozicioniranje u zadati direktorijum, prilikom poziva potrebno je navesti naziv_komande naziv_direktorijuma");
                     Console.WriteLine("Za vracanje u roditeljski direktorijum unesite \"cd ..\"");
                     break;
 
                 case "df":
-                    Console.WriteLine("Prikazuje slobodan prostor na fajl sistemu, prilikom poziva potrebno je navesti naziv_komande. Za detaljniji prikaz trenutnog stanja fajl sistema potrebno je navesti \"df -h\"\n");
+                    Console.WriteLine("Prikazuje slobodan prostor na fajl sistemu, prilikom poziva potrebno je navesti naziv_komande. Za detaljniji prikaz trenutnog stanja fajl sistema potrebno je navesti \"df -h\"");
                     break;
 
                 case "mkdir":
-                    Console.WriteLine("Kreira novi direktorijum na zadatoj putanji, prilikom poziva potrebno je navesti naziv_komande naziv_direktorijuma putanja. Putanja je opcioni parametar, ukoliko se ne navede podrazumijeva se trenutna putanja\n");
+                    Console.WriteLine("Kreira novi direktorijum na trenutnoj putanji, prilikom poziva potrebno je navesti naziv_komande naziv_direktorijuma putanja. Putanja je opcioni parametar");
                     break;
 
                 case "create":
-                    Console.WriteLine("Kreira novu datoteku na zadatoj putanji, prilikom poziva potrebno je navesti naziv_komande naziv_datoteke putanja.  Putanja je opcioni parametar, ukoliko se ne navede podrazumijeva se trenutna putanja\n");
+                    Console.WriteLine("Kreira novu datoteku na zadatoj putanji, prilikom poziva potrebno je navesti naziv_komande naziv_datoteke putanja.  Putanja je opcioni parametar, ukoliko se ne navede podrazumijeva se trenutna putanja");
                     break;
 
                 case "put":
-                    Console.WriteLine("Omogucava dodavanje datoteke sa fajl sistema racunara na novi fajl sistem, prilikom poziva potrebno je navesti naziv_komande izvorna_putanja krajnja_putanja\n");
+                    Console.WriteLine("Omogucava dodavanje datoteke sa fajl sistema racunara na novi fajl sistem, prilikom poziva potrebno je navesti naziv_komande izvorna_putanja krajnja_putanja");
                     break;
 
                 case "get":
-                    Console.WriteLine("Omogucava dodavanje datoteke sa novog fajl sistema na fajl sistema racunara, prilikom poziva potrebno je navesti naziv_komande izvorna_putanja krajnja_putanja\n");
+                    Console.WriteLine("Omogucava dodavanje datoteke sa novog fajl sistema na fajl sistema racunara, prilikom poziva potrebno je navesti naziv_komande izvorna_putanja krajnja_putanja");
                     break;
 
                 case "ls":
-                    Console.WriteLine("Ispisuje sadrzaj direktorijuma na trenutnoj putanji\n");
+                    Console.WriteLine("Ispisuje sadrzaj direktorijuma na trenutnoj putanji");
                     break;
 
                 case "cp":
-                    Console.WriteLine("Kreira kopiju datoteke na trenutnoj putanji\n");
+                    Console.WriteLine("Kreira kopiju datoteke na trenutnoj putanji");
                     break;
 
                 case "mv":
-                    Console.WriteLine("Omogucava premjestanje datoteke sa trenutne putanje na zadatu lokaciju, prilikom poziva potrebno je navesti naziv_komande naziv_fajla krajnja_putanja\n");
+                    Console.WriteLine("Omogucava premjestanje datoteke sa trenutne putanje na zadatu lokaciju, prilikom poziva potrebno je navesti naziv_komande naziv_fajla krajnja_putanja");
                     break;
 
                 case "rename":
-                    Console.WriteLine("Omogucava promjenu naziva datoteke ili diretorijuma na trenutnoj putanji. U slucaju promjene naziva datoteke potrebno je navesti naziv_komande trenutni_naziv_datoteke novi_naziv_datoteke. U slucaju promjene naziva direktorijuma potrebno je navesti naziv_komande novi_naziv_direktorijuma\n");
+                    Console.WriteLine("Omogucava promjenu naziva datoteke ili diretorijuma na trenutnoj putanji. U slucaju promjene naziva datoteke potrebno je navesti naziv_komande trenutni_naziv_datoteke novi_naziv_datoteke. U slucaju promjene naziva direktorijuma potrebno je navesti naziv_komande novi_naziv_direktorijuma");
                     break;
 
                 case "echo":
-                    Console.WriteLine("Omogucava upis tekstualnog sadrzaja u datoteku, prilikom poziva poptreno je navesti naziv_komande naziv_datoteke tekstualni_sadrzaj\n");
+                    Console.WriteLine("Omogucava upis tekstualnog sadrzaja u datoteku, prilikom poziva poptreno je navesti naziv_komande naziv_datoteke tekstualni_sadrzaj");
                     break;
 
                 case "cat":
-                    Console.WriteLine("Omogucava prikaz sadrzaja tekstualne datoteke\n");
+                    Console.WriteLine("Omogucava prikaz sadrzaja tekstualne datoteke");
                     break;
 
                 case "rm":
-                    Console.WriteLine("Omogucava brisanje datoteke ili direktorijuma sa trenutne putanje. U slucaju brisanja kompletnog brisanja sadrzaja direktorijuma potrebno je navesti \"rm - r\". Prilikom poziva potrebno je navesti naziv_komande naziv_dat/dir\n");
+                    Console.WriteLine("Omogucava brisanje datoteke ili direktorijuma sa trenutne putanje. U slucaju brisanja kompletnog brisanja sadrzaja direktorijuma potrebno je navesti \"rm - r\". Prilikom poziva potrebno je navesti naziv_komande naziv_dat/dir");
                     break;
 
                 case "stat":
-                    Console.WriteLine("Omogucava ispis podataka o datoteci, prilikom poziva potrebno je navesti naziv_komande naziv_datoteke\n");
+                    Console.WriteLine("Omogucava ispis podataka o datoteci, prilikom poziva potrebno je navesti naziv_komande naziv_datoteke");
                     break;
 
                 default:
-                    Console.WriteLine("Greska - nepostojeca opcija! Za listu svih opcija unesite \"help\"\n");
+                    Console.WriteLine("Greska - nepostojeca opcija! Za listu svih opcija unesite \"help\"");
                     break;
 
 
@@ -472,58 +577,100 @@ namespace FileSystemImplementation
             
         }
 
+        //TREBA TESTIRATI
         private void GetRootInformation(int a = 0)
         {
             StreamReader reader = new StreamReader(new FileStream("FileSystem.bin", FileMode.Open));
             string line = reader.ReadLine();
 
-            Regex regex = new Regex(@"HOME~([0-9]+)~([0-9]+)~([0-9]+)~([0-9]+)~([0-9]+)");
-            Match match = regex.Match(line);
+            Regex regex = new Regex(@"[0-9]+");
+            MatchCollection matches = regex.Matches(line);
 
             if (a == 1)
             {
-                Console.WriteLine("Slobodan memorijski prostor: " + match.Groups[4] + "b\n");
+                Console.WriteLine("Slobodan memorijski prostor: " + matches[3] + "b");
             }
             else
             {
-                Console.WriteLine("Broj direktorijuma: " + match.Groups[1]);
-                Console.WriteLine("Broj datoteka: " + match.Groups[2]);
-                Console.WriteLine("Iskoriscen memorijski prostor: " + match.Groups[3] + "b");
-                Console.WriteLine("Slobodan memorijski prostor: " + match.Groups[4] + "b");
-                Console.WriteLine("Ukupna velicina fajl sistema: " + match.Groups[5] + "b\n");
+                Console.WriteLine("Broj direktorijuma: " + matches[0]);
+                Console.WriteLine("Broj datoteka: " + matches[1]);
+                Console.WriteLine("Iskoriscen memorijski prostor: " + matches[2] + "b");
+                Console.WriteLine("Slobodan memorijski prostor: " + matches[3] + "b");
+                Console.WriteLine("Ukupna velicina fajl sistema: " + matches[4] + "b");
             }
 
             reader.Close();
-
-            //Drugi nacin
-            //Regex regex2 = new Regex(@"[0-9]+");
-            //MatchCollection matches = regex2.Matches(line);
-            //Console.WriteLine(matches[0]);
-            //Console.WriteLine(matches[1]);
-            //Console.WriteLine(matches[2]);
-            //Console.WriteLine(matches[3]);
-
         }
 
-        //Trebalo bi da sada mkdir savrseno radi
-        private void MakeDirectory(string name, string path = "root/", string depth = "1") //path je putanja na kojoj treba da se nalazi novi folder
+        private void MakeDirectory(string name, string path = "root/")
         {
             name = CheckName(name, path);
 
-            Directory directory = new Directory(name, getNewId(), DateTime.Today, DateTime.Today, DateTime.Today, path, depth);
+            Directory directory = new Directory(name, GetNewId(), DateTime.Now, path);
             directory.WriteToFile();
             numberOfDirectories++;
             Update();
         }
+
+
+        //AKO SE ISPOSTAVI DA MOZE root/folder/podfolder, ONDA MI TREBA OVAJ DIO KODA
+        //Radi perfektno - ne diraj nista! - 
+        //private void MakeDirectory(string name, string path = "root/") //path je putanja na kojoj treba da se nalazi novi folder, tj putanja sa koje se poziva funkcija mkdir
+        //{
+        //    name = CheckName(name, path);
+        //
+        //    int depth;
+        //    if (path == "root/")
+        //    {
+        //        depth = 1;
+        //    }
+        //    else
+        //    {
+        //        depth = CheckPath(path); //provjera putnje je potrebna ako se funkcija mkdir pozove sa "mkdir naziv_direktorijuma putanja_na_kojoj_treba_kreirati_direktorijum"
+        //        if (depth != 1 && depth != 2)
+        //        {
+        //            Console.WriteLine("Greska - nije moguce kreirati direktorijum na zadatoj putanji");
+        //            return;
+        //        }
+        //        else
+        //        {
+        //            path += '/';
+        //        }
+        //    }
+        //
+        //    Directory directory = new Directory(name, getNewId(), DateTime.Now, DateTime.Now, DateTime.Now, path, depth);
+        //    directory.WriteToFile();
+        //    numberOfDirectories++;
+        //    Update();
+        //}
+
+//        private int CheckPath(string path)
+//        {
+//            int depth = -1;
+//            StreamReader reader = new StreamReader(new FileStream("FileSystem.bin", FileMode.Open));
+//            string line = reader.ReadLine();
+//            while (!line.Contains(separator))
+//            {
+//                if (line.Contains("~" + path + "~"))
+//                {
+//                    string[] _path = path.Split('/');
+//                    depth = _path.Count();
+//                    break;
+//                }
+//                line = reader.ReadLine();
+//            }
+//            reader.Close();
+//            return depth;
+//        }
 
         private string CheckName(string name, string path)
         {
             while(true)
             {
                 Match match = (new Regex(@"[A-Za-z0-9.-]+")).Match(name);
-                bool isDuplicate = IsDuplicate(name, path); 
+                bool exists = Exists(name, path); 
 
-                if (name.Length <= 20 && !isDuplicate && match.Value == name)
+                if (name.Length <= 20 && !exists && match.Value == name)
                 {
                     return name;
                 }
@@ -538,7 +685,7 @@ namespace FileSystemImplementation
                     Console.WriteLine("Unesite novi naziv direktorijuma");
                     name = Console.ReadLine();
                 }
-                else if(isDuplicate)
+                else if(exists)
                 {
                     Console.WriteLine("Greska - vec postoji datoteka ili direktorijum sa datim nazivom");
                     Console.WriteLine("Unesite novi naziv direktorijuma");
@@ -547,7 +694,7 @@ namespace FileSystemImplementation
             }
         }
 
-        private bool IsDuplicate(string name, string path)
+        private bool Exists(string name, string path)
         {
             bool flag = false;
             StreamReader reader = new StreamReader(new FileStream("FileSystem.bin", FileMode.Open));
@@ -568,10 +715,10 @@ namespace FileSystemImplementation
         private void Update()
         {
             //procita sve podatke o datotekama i direktorijumima u root-u i upise u listu - sadrzaj root direktorijuma
-            //StreamReader reader = new StreamReader(new FileStream("FileSystem.bin", FileMode.Open));
-            //_ = reader.ReadLine();
-            //Regex regex2 = new Regex(@"[A-Za-z0-9\/:.-]+");
-            //string line = reader.ReadLine();
+            //streamreader reader = new streamreader(new filestream("filesystem.bin", filemode.open));
+            //_ = reader.readline();
+            //regex regex2 = new regex(@"[a-za-z0-9\/:.-]+");
+            //string line = reader.readline();
             //while (!line.Contains(separator))
             //{
             //    MatchCollection matches = regex2.Matches(line);
@@ -596,11 +743,12 @@ namespace FileSystemImplementation
             StreamWriter writer = new StreamWriter(new FileStream("FileSystem.bin", FileMode.Open));
             writer.Write("HOME~" + numberOfDirectories + "~" + numberOfFiles + "~");
             writer.WriteLine(usedSpace + "~" + (MAX_SIZE_OF_FILE_SYSTEM - usedSpace) + "~" + MAX_SIZE_OF_FILE_SYSTEM);
-            writer.WriteLine(content);
+            writer.Write(content);
             writer.Close();
         }
 
-        private int getNewId()
+        //NE ČAČKAJ NIŠTA - RADI
+        private int GetNewId()
         {
             StreamReader reader2 = new StreamReader(new FileStream("ListOfIdentificators.txt", FileMode.OpenOrCreate));
             string content = reader2.ReadToEnd();
@@ -623,7 +771,8 @@ namespace FileSystemImplementation
             int newId = lastId + 1;
 
             StreamWriter writer = new StreamWriter(new FileStream("ListOfIdentificators.txt", FileMode.OpenOrCreate));
-            writer.WriteLine(newId + "\r\n" + content);
+            writer.WriteLine(newId);
+            writer.WriteLine(content);
             writer.Close();
 
             return newId;

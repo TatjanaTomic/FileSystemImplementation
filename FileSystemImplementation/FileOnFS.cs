@@ -14,19 +14,14 @@ namespace FileSystemImplementation
         public string filePath;
         public int fileDepth;
         public DateTime dateCreated;
-        public DateTime lastTimeModified;
-        public DateTime lastTimeOpened;
         public string[] information = { " " };
 
-        public FileOnFS(string name, int id, DateTime dateC, DateTime dateM, DateTime dateO, string path = "root/", string depth = "1")
+        public FileOnFS(string name, int id, DateTime dateC, string path = "root/")
         {
             fileName = name;
             fileId = id;
-            filePath = path + name;
-            fileDepth = Int32.Parse(depth);
+            filePath = path + "/" + name;
             dateCreated = dateC;
-            lastTimeModified = dateM;
-            lastTimeOpened = dateO;
         }
 
         internal void WriteToFile()
@@ -38,8 +33,7 @@ namespace FileSystemImplementation
 
             StreamWriter writer = new StreamWriter(new FileStream("FileSystem.bin", FileMode.Open));
             writer.WriteLine(firstLine);
-            writer.Write("dir~" + fileId + "~" + fileName + "~" + filePath + "~" + fileDepth + "~");
-            writer.Write(dateCreated.ToString() + "~" + lastTimeModified.ToString() + "~" + lastTimeOpened.ToString() + "~");
+            writer.Write("dir~" + fileId + "~" + fileName + "~" + filePath + "~" + dateCreated.ToString() + "~");
             foreach (var str in information)
                 writer.Write(str + "~");
             writer.Write("\r\n" + contentOfFS);
