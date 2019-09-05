@@ -8,25 +8,19 @@ using System.Threading.Tasks;
 namespace FileSystemImplementation
 {
     //TODO: Dodati mogucnost za mkdir i create da se kreiraju na unesenoj putanji
-    //DONE: Ograniciti duzinu naziva - KADA BUDEM PRAVILA MakeFile() treba da provjerim duzinu prije poziva checkName()
-    //TODO: Sadrzaj direktorijuma treba cuvati u listi, a ne statickom nizu stringova!!!
     //TODO: Kao dodatnu komandu mogu dodati find !!!!!!
-    //DONE: Promijeni putanje direktorijuma - path+name i onda u update i load data reba promijeniti uslov "~root/~" jer nece nikad nista mecirati
     class Directory
     {
         public string directoryName;
         public readonly int directoryId;
         public string directoryPath;
-        public int directoryDepth;
         public DateTime dateCreated;
-        public string[] contentOfDir = { " " };
 
-        public Directory(string name, int id,  DateTime dateC, string path = "root/", int depth = 1)
+        public Directory(string name, int id,  DateTime dateC, string path = "root/")
         {
-            directoryName = name;
+            directoryName = name.Replace('.', '-'); //Ovo nije pametno jer ako vec postoji folder sa nazivom folder-1 a mi pokusamo dodati folder.1, proci ce, ali meni se ne da jos i to dodavati 
             directoryId = id;
-            directoryPath = path + name;
-            directoryDepth = depth;
+            directoryPath = path + directoryName;
             dateCreated = dateC;
         }
 
@@ -40,8 +34,6 @@ namespace FileSystemImplementation
             StreamWriter writer = new StreamWriter(new FileStream("FileSystem.bin", FileMode.Open));
             writer.Write(firstLine + '\n');
             writer.Write("dir~" + directoryId + "~" + directoryName + "~" + directoryPath + "~" + dateCreated.ToString() + "~");
-            foreach (var str in contentOfDir)
-                writer.Write(str + "~");
             writer.Write('\n' + contentOfFS);
             writer.Close();
 

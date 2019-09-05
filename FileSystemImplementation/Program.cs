@@ -8,14 +8,19 @@ using System.Threading.Tasks;
 namespace FileSystemImplementation
 {
 
-
+    //TODO: TREBA DODATI AZURIRANJE SADRZAJA DATOTEKE U MFT-u
     class Program
     { 
         static void Main(string[] args)
-        { 
-            FileSystem fileSystem = new FileSystem();
-            fileSystem.ExecuteFileSystem();
-            Console.ReadKey();
+        {
+            try
+            {
+                new FileSystem().ExecuteFileSystem();
+            }
+            catch(Exception ex)
+            {
+                Console.WriteLine(ex.Message);
+            }
         }
 
     }
@@ -24,15 +29,15 @@ namespace FileSystemImplementation
 //TASKS:
 //help - DONE
 //df - DONE
-//cd
-//mkdir - uradjeno ali samo za root
-//create
+//cd - DONE
+//mkdir - DONE
+//create - DONE
 //put
 //get
-//ls - uradjeno za root
+//ls - DONE
 //cp
-//mv
-//rename
+//mv - DONE
+//- DONE
 //echo
 //cat
 //rm

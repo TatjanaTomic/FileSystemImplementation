@@ -7,21 +7,22 @@ using System.Threading.Tasks;
 
 namespace FileSystemImplementation
 {
+    //file~id~naziv~putanja~datum~velicina
     class FileOnFS
     {
         public string fileName;
         public readonly int fileId;
         public string filePath;
-        public int fileDepth;
         public DateTime dateCreated;
-        public string[] information = { " " };
+        public int initialSize;
 
-        public FileOnFS(string name, int id, DateTime dateC, string path = "root/")
+        public FileOnFS(string name, int id, DateTime dateC, string path = "root/", int size = 0)
         {
             fileName = name;
             fileId = id;
-            filePath = path + "/" + name;
+            filePath = path + name;
             dateCreated = dateC;
+            initialSize = size;
         }
 
         internal void WriteToFile()
@@ -33,9 +34,7 @@ namespace FileSystemImplementation
 
             StreamWriter writer = new StreamWriter(new FileStream("FileSystem.bin", FileMode.Open));
             writer.WriteLine(firstLine);
-            writer.Write("dir~" + fileId + "~" + fileName + "~" + filePath + "~" + dateCreated.ToString() + "~");
-            foreach (var str in information)
-                writer.Write(str + "~");
+            writer.Write("file~" + fileId + "~" + fileName + "~" + filePath + "~" + dateCreated.ToString() + "~" + initialSize);
             writer.Write("\r\n" + contentOfFS);
             writer.Close();
         }
