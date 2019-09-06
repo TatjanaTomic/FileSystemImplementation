@@ -230,7 +230,7 @@ namespace FileSystemImplementation
                             }
                             else
                             {
-                                Console.WriteLine("Greska - Netacan unos! Unesite \"help stat\" za pomoc");
+                                Console.WriteLine("Greska - Netacan unos! Unesite \"help rm\" za pomoc");
                             }
                             break;
                         }
@@ -255,9 +255,120 @@ namespace FileSystemImplementation
             }
         }
 
-        private void RemoveFile(string v)
+        private string[] GetFilesOfDirectory(string name)
         {
-            throw new NotImplementedException();
+            string _files = "";
+            
+            StreamReader reader = new StreamReader(new FileStream("FileSystem.bin", FileMode.Open));
+            string line = reader.ReadLine();
+            while (!line.Contains(separator))
+            {
+                if(line.Contains("~root/" + name + "/"))
+                {
+                    _files += (line.Split('~'))[2] + "*";
+                }
+                line = reader.ReadLine();
+            }
+            reader.Close();
+            //Ovdje se pojavi jedan element vise, na kraju niza imam prazan string !!!!!!!!!!!!!!!!!!!!!!!!!!!!
+            //!!!!!!!!!!!!!!!!!!!!!!!!!!!
+            //"""""""!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+            return _files.Split('*');
+        }
+
+        private void RemoveDirectory(string name, string path = "root/")
+        {
+            if (!Exists(name, "root/"))
+            {
+                Console.WriteLine("Greska - ne postoji direktorijum sa datim nazivom.");
+                return;
+            }
+
+            if (path == "root/")
+            {
+                path += name;
+            }
+
+            if (path != "root/" + name)
+            {
+                Console.WriteLine("Greska - sa putanje {0} se ne moze ukloniti direktorijum {1}", path, name);
+                return;
+            }
+
+            string[] files = GetFilesOfDirectory(name);
+            foreach (var file in files)
+                RemoveFile(file, path + "/");
+
+            RemoveMftRecord(name);
+
+            numberOfDirectories--;
+
+            Update(); Update();
+        }
+
+        private void RemoveMftRecord(string name, string path = "root/")
+        {
+            //Ovo je jako glup nacin za realizaciju, ali posto je 2h ujutro i ne da mi se razmisljati, samo radim copy-paste
+            StreamReader reader = new StreamReader(new FileStream("FileSystem.bin", FileMode.Open));
+            Queue<string> content1 = new Queue<string>();
+            string line;
+
+            do
+            {
+                line = reader.ReadLine();
+                if (line.Contains("~" + path + name + "~"))
+                {
+                    break;
+                }
+                else
+                {
+                    content1.Enqueue(line);
+                }
+
+            }
+            while (!line.Contains(separator));
+            line = reader.ReadLine();
+            string content2 = reader.ReadToEnd();
+            reader.Close();
+
+            WriteFileSystem(content1, line, content2);
+        }
+        private void RemoveFile(string name, string path = "root/")
+        {
+            if (!Exists(name, path))
+            {
+                Console.WriteLine("Greska - ne postoji datoteka sa nazivom {0} na trenutnoj putnji.", name);
+                return;
+            }
+
+            if (GetSizeOfFile(name, path) != 0)
+            {
+
+                byte[] _contentOfFS = GetContentOfFS();
+
+                int start, end;
+                (start, end) = GetStartAndEndPositions(_contentOfFS, GetFileID(name, path));
+
+                LinkedList<byte> newContentOfFS = new LinkedList<byte>();
+                for (int i = 0; i < start - 6; ++i)
+                    newContentOfFS.AddLast(_contentOfFS[i]);
+                for (int i = end + 6; i < _contentOfFS.Length; ++i)
+                    newContentOfFS.AddLast(_contentOfFS[i]);
+
+                byte[] _newContentOfFS = newContentOfFS.ToArray();
+
+                BinaryWriter writer = new BinaryWriter(new FileStream("FileSystem.bin", FileMode.Truncate));
+                writer.Write(_newContentOfFS);
+                writer.Close();
+
+            }
+
+            RemoveMftRecord(name, path);
+
+            numberOfFiles--;
+
+            Update(); Update();
+
         }
 
         private void GetContentOfFile(string name, string path = "root/")
@@ -268,7 +379,14 @@ namespace FileSystemImplementation
                 return;
             }
 
+
             //Treba dodati provjeru da li je datoteka tekstualna 
+
+            if (GetSizeOfFile(name, path) == 0)
+            {
+                Console.WriteLine(" ");
+                return;
+            }
 
             byte[] _id = GetFileID(name, path);
 
@@ -288,7 +406,7 @@ namespace FileSystemImplementation
             Console.Write('\n');
         }
 
-        (int, int) GetStartAndEndPositions(byte[] _contentOfFS, byte[] _id)
+        private (int, int) GetStartAndEndPositions(byte[] _contentOfFS, byte[] _id)
         {
             int start = 0, end = 0; //promjenljive koje ce mi u prethodnom nizu oznaciti pocetak i kraj data segmenta trazenog fajla
             for (int i = 0; i < _contentOfFS.Length; ++i)
@@ -462,8 +580,11 @@ namespace FileSystemImplementation
             return "-1";
         }
 
-        private byte[] GetFileID(string name, string path)
+        private byte[] GetFileID(string name, string path = "root/")
         {
+            if (!path.EndsWith("/"))
+                path += "/";
+
             StreamReader reader = new StreamReader(new FileStream("FileSystem.bin", FileMode.Open));
             string line = reader.ReadLine();
             while (!line.Contains(separator))
@@ -899,7 +1020,21 @@ namespace FileSystemImplementation
                             }
 
                         case "rm":
-                            break;
+                            {
+                                if (words.Count() == 2)
+                                {
+                                    RemoveFile(words[1], currentPath + "/");
+                                }
+                                else if (words.Count() == 3 && words[1] == "-r")
+                                {
+                                    RemoveDirectory(words[2], currentPath);
+                                }
+                                else
+                                {
+                                    Console.WriteLine("Greska - Netacan unos! Unesite \"help rm\" za pomoc");
+                                }
+                                break;
+                            }
 
                         case "stat":
                             {
