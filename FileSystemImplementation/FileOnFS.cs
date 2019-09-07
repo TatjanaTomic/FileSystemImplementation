@@ -33,9 +33,9 @@ namespace FileSystemImplementation
             reader.Close();
 
             StreamWriter writer = new StreamWriter(new FileStream("FileSystem.bin", FileMode.Open));
-            writer.WriteLine(firstLine);
+            writer.Write(firstLine + '\n');
             writer.Write("file~" + fileId + "~" + fileName + "~" + filePath + "~" + dateCreated.ToString() + "~" + initialSize);
-            writer.Write("\r\n" + contentOfFS);
+            writer.Write('\n' + contentOfFS);
             writer.Close();
         }
     }
