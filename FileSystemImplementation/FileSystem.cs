@@ -24,7 +24,7 @@ namespace FileSystemImplementation
         public void ExecuteFileSystem()
         {
 
-            if (!File.Exists("FileSystem.bin"))
+            if (!File.Exists("FileSystem.bin")) //Kad se pokrene program, napravi se fajl sistem ako ga vec nema
             {
                 CreateFileSystem();
             }
@@ -324,7 +324,7 @@ namespace FileSystemImplementation
             byte[] _id = GetFileID(name, path);
 
             int start = 0, end = 0;
-            for(int i=0; i<contentOfFS.Length; ++i)
+            for(int i=0; i<contentOfFS.Length; i++)
             {
                 if (contentOfFS[i] == '~' && contentOfFS[i + 1] == _id[0] && contentOfFS[i + 2] == _id[1] && contentOfFS[i + 3] == _id[2] && contentOfFS[i + 4] == '~')
                 {
@@ -430,14 +430,16 @@ namespace FileSystemImplementation
                 newContentOfFS.AddLast(_contentOfFS[i]);
 
             byte[] _newContentOfFS = newContentOfFS.ToArray();
-
+            
             RewriteFS(_newContentOfFS);
 
             Update(); Update();
         }
         private void WriteToDataSegment(byte[] _id, byte[] content)
         {
-            BinaryWriter writer = new BinaryWriter(new FileStream("FileSystem.bin", FileMode.Append));
+            byte[] oldContent = File.ReadAllBytes("FileSystem.bin");
+            BinaryWriter writer = new BinaryWriter(new FileStream("FileSystem.bin", FileMode.Truncate));
+            writer.Write(oldContent);
             writer.Write((byte)'~');
             writer.Write(_id);
             writer.Write((byte)'D');
@@ -449,7 +451,6 @@ namespace FileSystemImplementation
             writer.Write((byte)'F');
             writer.Write((byte)'~');
             writer.Close();
-
             Update(); Update();
         }
         private byte[] ReadFromDataSegment(byte[] _id)
@@ -459,19 +460,31 @@ namespace FileSystemImplementation
             int start, end; //promjenljive koje ce mi u prethodnom nizu oznaciti pocetak i kraj data segmenta trazenog fajla
             (start, end) = GetStartAndEndPositions(_id);
 
+            /*
+            byte[] content = new byte[end - start + 1];
+            for (int i = 0; i < end - start + 1; i++) 
+            {
+                content[i] = _contentOfFS[start + i];
+            }
+            */
+
+
+            
             LinkedList<byte> contentOfFile = new LinkedList<byte>();
-            for (int i = start; i <= end; ++i)
+            for (int i = start; i <= end; i++)
             {
                 contentOfFile.AddLast(_contentOfFS[i]);
             }
 
             return contentOfFile.ToArray();
+
+            //return content;
         }
         private (int, int) GetStartAndEndPositions(byte[] _id) //funkcija vracapocetak i kraj sadrzaja datoteke (zapis u data segmentu)
         {
             byte[] _contentOfFS = File.ReadAllBytes("FileSystem.bin");
             int start = 0, end = 0; //promjenljive koje ce mi u prethodnom nizu oznaciti pocetak i kraj data segmenta trazenog fajla
-            for (int i = 0; i < _contentOfFS.Length; ++i)
+            for (int i = 0; i < _contentOfFS.Length; i++)
             {
                 if (_contentOfFS[i] == '~' && _contentOfFS[i + 1] == _id[0] && _contentOfFS[i + 2] == _id[1] && _contentOfFS[i + 3] == _id[2] && _contentOfFS[i + 4] == 'D' && _contentOfFS[i + 5] == '~')
                 {
@@ -502,7 +515,7 @@ namespace FileSystemImplementation
             Console.WriteLine("Unesite sadrzaj datoteke:");
             string sContentOfFile = Console.ReadLine();
             byte[] _contentOfFile = new byte[sContentOfFile.Length];
-            for (int i = 0; i < sContentOfFile.Length; ++i)
+            for (int i = 0; i < sContentOfFile.Length; i++)
                 _contentOfFile[i] = (byte)sContentOfFile[i];
             List<byte> contentOfFile = _contentOfFile.ToList();
 
@@ -560,7 +573,7 @@ namespace FileSystemImplementation
                 if (contentOfFS[i] == '~' && contentOfFS[i + 1] == _id[0] && contentOfFS[i + 2] == _id[1] && contentOfFS[i + 3] == _id[2] && contentOfFS[i + 4] == '~')
                 {
                     int br = 0;
-                    //Od i-te pozicije trazim 4. ~
+                    //Od i-te pozicije trazim četvrto ~
                     for (int j = i + 1; j < contentOfFS.Length; j++)
                     {
                         if (contentOfFS[j] == '~')
@@ -629,7 +642,7 @@ namespace FileSystemImplementation
                     reader.Close();
 
                     byte[] _id = new byte[id.Length];
-                    for (int i = 0; i < id.Length; ++i)
+                    for (int i = 0; i < id.Length; i++)
                         _id[i] = (byte)id[i];
 
                     return _id;
@@ -650,7 +663,7 @@ namespace FileSystemImplementation
                 {
                     string size = (line.Split('~'))[5]; 
                     reader.Close();
-                    return Int32.Parse(size);
+                    return Convert.ToInt32(size);
                 }
                 line = reader.ReadLine();
             }
@@ -701,7 +714,7 @@ namespace FileSystemImplementation
      
             Console.WriteLine("Naziv datoteke: " + name);
             Console.Write("ID: ");
-            for (int i = 0; i < _id.Length; ++i)
+            for (int i = 0; i < _id.Length; i++)
                 Console.Write((char)_id[i]);
             Console.WriteLine("\nPutanja: " + path + name);
             Console.WriteLine("Datum i vrijeme kreiranja: " + GetDateCreated(name, path));
@@ -1188,21 +1201,10 @@ namespace FileSystemImplementation
             }
 
             byte[] contentOfFile = ReadFromDataSegment(GetFileID(iFile, iPath));
-            Console.WriteLine(contentOfFile.Length);
+
             try
             {
                 File.WriteAllBytes(outputPath, contentOfFile);
-                /*FileStream file = new FileStream(outputPath, FileMode.Create);
-                file.Close();
-                file = new FileStream(outputPath, FileMode.Open);
-                BinaryWriter bw = new BinaryWriter(file);
-                bw.Write(contentOfFile);
-                bw.Close();
-                file.Close();*/
-            /*
-                BinaryWriter writer = new BinaryWriter(new FileStream(outputPath, FileMode.Create));
-                writer.Write(contentOfFile);
-                writer.Close();*/            
             }
             catch(Exception e)
             {
@@ -1218,7 +1220,7 @@ namespace FileSystemImplementation
             Console.WriteLine("Unesite putanju izlaznog fajla(primjer: root/folder/datoteka):");
             string outputPath = Console.ReadLine();
 
-            if(!File.Exists(inputPath))
+            if (!File.Exists(inputPath))
             {
                 Console.WriteLine("Greska - fajl {0} ne postoji.", inputPath);
                 return;
@@ -1226,21 +1228,23 @@ namespace FileSystemImplementation
 
             string oPath, oFile;
             (oPath, oFile) = CheckPath(outputPath);
-            if(oPath == "" && oFile == "")
+            if (oPath == "" && oFile == "")
             {
                 Console.WriteLine("Greska - unesena je nevazeca putanja {0}", outputPath);
                 return;
             }
 
-            if(Exists(oFile, oPath))
+            if (Exists(oFile, oPath))
             {
                 Console.Write("Greska - fajl {0} vec postoji na fajl sistemu", outputPath);
                 return;
             }
 
+            List<byte> list = new List<byte>();
             try
             {
-                File.OpenRead(inputPath);
+                byte[] content = File.ReadAllBytes(inputPath);
+                list = content.ToList();
             }
             catch(Exception e)
             {
@@ -1248,9 +1252,10 @@ namespace FileSystemImplementation
                 Console.WriteLine(e.Message);
                 return;
             }
-            byte[] _contentOfInputFile = File.ReadAllBytes(inputPath);
-            
-            if(_contentOfInputFile.Count() > MAX_SIZE_OF_FILE)
+
+            byte[] _contentOfInputFile = list.ToArray();
+
+            if (_contentOfInputFile.Count() > MAX_SIZE_OF_FILE)
             {
                 Console.WriteLine("Greska - najveca dozvoljena velicina fajla je {0}b", MAX_SIZE_OF_FILE);
                 return;
@@ -1275,7 +1280,7 @@ namespace FileSystemImplementation
             }
 
             string newName = "";
-            for(int i=1; i<1000; ++i) //valjda niko nece praviti vise od 1000 kopija jedne datoteke :'D
+            for(int i=1; i<1000; i++) //valjda niko nece praviti vise od 1000 kopija jedne datoteke :'D
             {
                 if (!Exists(name + "-copy" + i.ToString(), path))
                 {
@@ -1307,17 +1312,16 @@ namespace FileSystemImplementation
             MatchCollection matches = regex.Matches(firstLine);
 
             string _numberOfDirectories = matches[0].Value;
-            numberOfDirectories = Int32.Parse(_numberOfDirectories);
+            numberOfDirectories = Convert.ToInt32(_numberOfDirectories);
 
             string _numberOfFiles = matches[1].Value;
-            numberOfFiles = Int32.Parse(_numberOfFiles);
+            numberOfFiles = Convert.ToInt32(_numberOfFiles);
 
             string _usedSpace = matches[2].Value;
-            usedSpace = Int32.Parse(_usedSpace);
+            usedSpace = Convert.ToInt32(_usedSpace);
 
             string _freeSpace = matches[4].Value;
-            freeSpace = Int32.Parse(_freeSpace);
-
+            freeSpace = Convert.ToInt32(_freeSpace);
         }
 
         //RADI I OVO
@@ -1325,7 +1329,7 @@ namespace FileSystemImplementation
         {
             StreamWriter writer = new StreamWriter(new FileStream("FileSystem.bin", FileMode.Create));
             writer.Write("HOME~" + numberOfDirectories + "~" + numberOfFiles + "~");
-            writer.Write(initialUsedSpace + "~" + (MAX_SIZE_OF_FILE_SYSTEM - initialUsedSpace) + "~" + MAX_SIZE_OF_FILE_SYSTEM + '~' + '\n');
+            writer.Write(initialUsedSpace + "~" + (MAX_SIZE_OF_FILE_SYSTEM - initialUsedSpace) + "~" + MAX_SIZE_OF_FILE_SYSTEM + "~" + '\n');
             writer.Write(separator + '\n');
             writer.Close();
         }
@@ -1409,9 +1413,9 @@ namespace FileSystemImplementation
         }
 
         //NE DIRAJ!!!
-        private void GetRootInformation(bool flag = true)
+        private void GetRootInformation(bool flag = true) //opcija df
         {
-            if (flag)
+            if (flag) //ako je true znaci da je pozvana opcija df -h
             {
                 Console.WriteLine("Broj direktorijuma: " + numberOfDirectories);
                 Console.WriteLine("Broj datoteka: " + numberOfFiles);
@@ -1419,7 +1423,7 @@ namespace FileSystemImplementation
                 Console.WriteLine("Slobodan memorijski prostor: " + freeSpace + "b");
                 Console.WriteLine("Ukupna velicina fajl sistema: " + MAX_SIZE_OF_FILE_SYSTEM + "b");
             }
-            else
+            else //ako je proslijedjeno false, znaci da je pozvana opcija df
             {
                 Console.WriteLine("Slobodan memorijski prostor: " + freeSpace + "b");
             }
@@ -1491,22 +1495,30 @@ namespace FileSystemImplementation
 
         private void Update()
         {
-            StreamReader reader1 = new StreamReader(new FileStream("FileSystem.bin", FileMode.Open));
-            string firstLine = reader1.ReadLine();
-            string content = reader1.ReadToEnd();
-            reader1.Close();
+            byte[] content = File.ReadAllBytes("FileSystem.bin");
+            int start = 0;
+            for (int i = 0; i < content.Length; i++)
+            {
+                if (content[i] == '\n')
+                {
+                    start = i + 1;
+                    break;
+                }
+            }
 
-            usedSpace = firstLine.Length + content.Length + 1; // 1 dodajem zbog razlike u stvarnoj velicini fajla i duzinama ovih stringova
+            usedSpace = content.Length;
             freeSpace = MAX_SIZE_OF_FILE_SYSTEM - usedSpace;
 
-            StreamWriter writer = new StreamWriter(new FileStream("FileSystem.bin", FileMode.Open));
-            writer.Write("HOME~" + numberOfDirectories + "~" + numberOfFiles + "~");
-            writer.Write(usedSpace + "~" + (MAX_SIZE_OF_FILE_SYSTEM - usedSpace) + "~" + MAX_SIZE_OF_FILE_SYSTEM + "~" + '\n');
-            writer.Write(content);
-            writer.Close();
+            StreamWriter writer1 = new StreamWriter(new FileStream("FileSystem.bin", FileMode.Truncate));
+            writer1.Write("HOME~" + numberOfDirectories + "~" + numberOfFiles + "~" + usedSpace + "~" + freeSpace + "~" + MAX_SIZE_OF_FILE_SYSTEM + "~" + '\n');
+            writer1.Close();
+
+            BinaryWriter writer2 = new BinaryWriter(new FileStream("FileSystem.bin", FileMode.Append));
+            for (int i = start; i < content.Length; i++)
+                writer2.Write(content[i]);
+            writer2.Close();
         }
 
-        //NE ČAČKAJ NIŠTA - RADI
         private int GetNewId()
         {
             StreamReader reader2 = new StreamReader(new FileStream("ListOfIdentificators.txt", FileMode.OpenOrCreate));
@@ -1520,7 +1532,7 @@ namespace FileSystemImplementation
             int lastId;
             if(_lastId != null)
             {
-                lastId = Int32.Parse(_lastId);
+                lastId = Convert.ToInt32(_lastId);
             }
             else
             {

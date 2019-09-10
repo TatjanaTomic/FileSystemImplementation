@@ -7,8 +7,6 @@ using System.Threading.Tasks;
 
 namespace FileSystemImplementation
 {
-
-    //TODO: TREBA DODATI AZURIRANJE SADRZAJA DATOTEKE U MFT-u
     class Program
     { 
         static void Main(string[] args)
@@ -25,20 +23,3 @@ namespace FileSystemImplementation
 
     }
 }
-
-//TASKS:
-//help - DONE
-//df - DONE
-//cd - DONE
-//mkdir - DONE
-//create - DONE
-//put
-//get
-//ls - DONE
-//cp
-//mv - DONE
-//- DONE
-//echo
-//cat
-//rm
-//stat

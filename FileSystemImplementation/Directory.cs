@@ -6,9 +6,7 @@ using System.Text;
 using System.Threading.Tasks;
 
 namespace FileSystemImplementation
-{
-    //TODO: Dodati mogucnost za mkdir i create da se kreiraju na unesenoj putanji
-    //TODO: Kao dodatnu komandu mogu dodati find !!!!!!
+{ 
     class Directory
     {
         public string directoryName;
@@ -18,6 +16,7 @@ namespace FileSystemImplementation
 
         public Directory(string name, int id,  DateTime dateC, string path = "root/")
         {
+            //!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
             directoryName = name.Replace('.', '-'); //Ovo nije pametno jer ako vec postoji folder sa nazivom folder-1 a mi pokusamo dodati folder.1, proci ce, ali meni se ne da jos i to dodavati 
             directoryId = id;
             directoryPath = path + directoryName;
@@ -26,9 +25,34 @@ namespace FileSystemImplementation
 
         internal void WriteToFile()
         {
+            byte[] content = File.ReadAllBytes("FileSystem.bin");
+            int start = 0;
+            for (int i = 0; i < content.Length; i++)
+            {
+                if (content[i] == '\n')
+                {
+                    start = i + 1;
+                    break;
+                }
+            }
+
+            BinaryWriter writer1 = new BinaryWriter(new FileStream("FileSystem.bin", FileMode.Truncate));
+            for (int i = 0; i < start; i++)
+                writer1.Write(content[i]);
+            writer1.Close();
+
+            StreamWriter writer2 = new StreamWriter(new FileStream("FileSystem.bin", FileMode.Append));
+            writer2.Write("dir~" + directoryId + "~" + directoryName + "~" + directoryPath + "~" + dateCreated.ToString() + "~" + '\n');
+            writer2.Close();
+
+            BinaryWriter writer3 = new BinaryWriter(new FileStream("FileSystem.bin", FileMode.Append));
+            for (int i = start; i < content.Length; i++)
+                writer3.Write(content[i]);
+            writer3.Close();
+            /*
             StreamReader reader = new StreamReader(new FileStream("FileSystem.bin", FileMode.Open));
             string firstLine = reader.ReadLine();
-            string contentOfFS = reader.ReadToEnd();
+            string contentOfFS = reader.ReadToEnd(); //!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
             reader.Close();
 
             StreamWriter writer = new StreamWriter(new FileStream("FileSystem.bin", FileMode.Open));
@@ -36,7 +60,7 @@ namespace FileSystemImplementation
             writer.Write("dir~" + directoryId + "~" + directoryName + "~" + directoryPath + "~" + dateCreated.ToString() + "~");
             writer.Write('\n' + contentOfFS);
             writer.Close();
-
+            */
         }
     }
 }
