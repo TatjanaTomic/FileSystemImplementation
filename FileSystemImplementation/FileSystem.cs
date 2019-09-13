@@ -22,10 +22,15 @@ namespace FileSystemImplementation
         public static readonly int EXIT = 0;
         public static readonly string separator = "~~~DATA-SEGMENT~~~";
 
+        /// <summary>
+        /// Funkcija se prva poziva prilikom pokretanja i predstavlja izvršavanje programa dok je korisnik pozicioniran u root folderu fajl sistema.
+        /// Prvo se provjeri da li postoji fajl sistem, ukoliko ne postoji poziva se funkcija CreateFileSystem(), a ukoliko postoji čitaju se podaci o trenutnom stanju FS.
+        /// Funkcija čita liniju sa konzole i na osnovu korisnikovog unosa poziva odgovarajuću komandu fajl sistema.
+        /// </summary>
         public void ExecuteFileSystem()
         {
 
-            if (!File.Exists("FileSystem.bin")) //Kad se pokrene program, napravi se fajl sistem ako ga vec nema
+            if (!File.Exists("FileSystem.bin"))
             {
                 CreateFileSystem();
             }
@@ -54,7 +59,7 @@ namespace FileSystemImplementation
                         Console.Clear();
                         break;
 
-                    case "ls": //RADI - NE DIRAJ ! - ls radi tako da ispise sadrzaj direktorijuma u kom sam trenutno pozicionirana
+                    case "ls":
                         {
                             if (words.Count() == 1)
                             {
@@ -67,7 +72,7 @@ namespace FileSystemImplementation
                             break;
                         }
 
-                    case "cd": //RADI - NE DIRAJ ! - cd je komanda za otvaranje nekog direktorijuma
+                    case "cd":
                         {
                             if (words.Count() == 2 && words[1] != "..")
                             {
@@ -84,7 +89,7 @@ namespace FileSystemImplementation
                             break;
                         }
 
-                    case "help": //RADI - NE DIRAJ !
+                    case "help":
                         {
                             if (words.Count() == 1)
                             {
@@ -101,7 +106,7 @@ namespace FileSystemImplementation
                             break;
                         }
 
-                    case "df": //RADI - NE DIRAJ ! - df ispisuje trenutno stanje memorije
+                    case "df":
                         {
                             if (words.Count() == 1)
                             {
@@ -118,7 +123,7 @@ namespace FileSystemImplementation
                             break;
                         }
 
-                    case "mkdir": //RADI - NE DIRAJ ! - mkdir pozivam samo sa nazivom foldera, ne unosim putanju jer se podrazumijevano kreiraju unutar root-a
+                    case "mkdir": //mkdir pozivam samo sa nazivom foldera, ne unosim putanju jer se podrazumijevano kreiraju unutar root-a
                         {
                             if(words.Count() == 2)
                             {
@@ -131,7 +136,7 @@ namespace FileSystemImplementation
                             break;
                         }
 
-                    case "create": //RADIIII - create moze da se pozove samo sa nazivom datoteke, tada se podrazumijeva da je datoteka na putanji na kojoj se trenutno nalazimo ili da se zada putanja na kojoj bi trebalo da se nalazi ta datoteka
+                    case "create": //create moze da se pozove samo sa nazivom datoteke, tada se podrazumijeva da je datoteka na putanji na kojoj se trenutno nalazimo ili da se zada putanja na kojoj bi trebalo da se nalazi ta datoteka
                         {
                             if (words.Count() == 2)
                             {
@@ -148,7 +153,7 @@ namespace FileSystemImplementation
                             break;
                         }
 
-                    case "rename": //RADIIIII - poziva se sa putanje na kojoj se trenutno nalazimo
+                    case "rename": //poziva se sa putanje na kojoj se trenutno nalazimo
                         {
                             if(words.Count() == 3)
                             {
@@ -161,7 +166,7 @@ namespace FileSystemImplementation
                         break;
                         }
                         
-                    case "mv": //TO JE TO - NE DIRAJ NISTA - sa trenutne putanje premjesta na unesenu putanju
+                    case "mv": //sa trenutne putanje premjesta na unesenu putanju
                         {
                             if(words.Count() == 3)
                             {
@@ -174,7 +179,7 @@ namespace FileSystemImplementation
                             break;
                         }
 
-                    case "echo": //Dodaj echo u help!!! - echo se poziva sa trenutne putanje
+                    case "echo":
                         {
                             if (words.Count() == 2)
                             {
@@ -275,8 +280,140 @@ namespace FileSystemImplementation
                 }
             }
         }
+        
+        /// <summary>
+        /// Funkcija se poziva prilikom pokretanja programa ukoliko fajl sistem vec ne postoji. 
+        /// Kreira binarnu datoteku sa nazivom FileSystem i u nju upisuje inicijalne podatke o FS.
+        /// </summary>      
+        private void CreateFileSystem()
+        {
+            StreamWriter writer1 = new StreamWriter(new FileStream("FileSystem.bin", FileMode.Create));
+            writer1.Write("HOME~" + numberOfDirectories.ToString().PadLeft(8)
+                            + "~" + numberOfFiles.ToString().PadLeft(8)
+                            + "~" + initialUsedSpace.ToString().PadLeft(8)
+                            + "~" + initialFreeSpace.ToString().PadLeft(8)
+                            + "~" + MAX_SIZE_OF_FILE_SYSTEM + "~" + '\n');
+            writer1.Write(separator + '\n');
+            writer1.Close();
+        }
+        
+        /// <summary>
+        /// Funkcija se poziva prilikom pokretanja programa i čita prvu liniju FileSystem.bin datoteke.
+        /// Iz pročitane linije čita podatke o trenutnom stanju FS i smješta podatke u odgovarajuće promjenljive - atribute objekta klase FileSystem
+        /// Linija je formata "HOME~      25~      44~   96539~20874981~20971520~ pa pomoću regex-a mečira potrebne brojeve
+        /// </summary>
+        private void LoadData()
+        {
+            StreamReader reader = new StreamReader(new FileStream("FileSystem.bin", FileMode.Open));
+            string firstLine = reader.ReadLine();
+            reader.Close();
 
-        private string[] GetFilesOfDirectory(string name)
+            Regex regex = new Regex(@"[0-9]+");
+            MatchCollection matches = regex.Matches(firstLine);
+
+            string _numberOfDirectories = matches[0].Value;
+            numberOfDirectories = Convert.ToInt32(_numberOfDirectories);
+
+            string _numberOfFiles = matches[1].Value;
+            numberOfFiles = Convert.ToInt32(_numberOfFiles);
+
+            string _usedSpace = matches[2].Value;
+            usedSpace = Convert.ToInt32(_usedSpace);
+
+            string _freeSpace = matches[4].Value;
+            freeSpace = Convert.ToInt32(_freeSpace);
+        }
+        
+        /// <summary>
+        /// Funkcija se pozivi kada god se u fajl sistemu desi izmjena kako bi se ažurirali podaci prve linije
+        /// Funkcija pročita sve bajtove FileSystem.bin datoteke u niz bajtova, upiše prvu liniju nanovo a ostatak sadržaja(niza) prepiše
+        /// </summary>
+        private void Update()
+        {
+            byte[] content = File.ReadAllBytes("FileSystem.bin");
+
+            usedSpace = content.Length;
+            freeSpace = MAX_SIZE_OF_FILE_SYSTEM - usedSpace;
+
+            StreamWriter writer1 = new StreamWriter(new FileStream("FileSystem.bin", FileMode.Truncate));
+            writer1.Write("HOME~" + numberOfDirectories.ToString().PadLeft(8)
+                            + "~" + numberOfFiles.ToString().PadLeft(8)
+                            + "~" + usedSpace.ToString().PadLeft(8)
+                            + "~" + freeSpace.ToString().PadLeft(8)
+                            + "~" + MAX_SIZE_OF_FILE_SYSTEM + "~" + '\n');
+            writer1.Close();
+
+            BinaryWriter writer2 = new BinaryWriter(new FileStream("FileSystem.bin", FileMode.Append));
+            for (int i = 51; i < content.Length; i++) // Krećem od 51. pozicije jer je prvih 50 bajtova rezervisano za prvu liniju
+                writer2.Write(content[i]);
+            writer2.Close();
+        }
+        
+        /// <summary>
+        /// Funkcija se poziva prilikom unosa komande "mkdir"
+        /// Funkcija kreira objekat tipa Directory i podatke upisuje u FileSystem.bin datoteku u vidu jednog zapisa u MFT tabeli
+        /// </summary>
+        /// <param name="name">Naziv foldera koji se kreira</param>
+        /// <param name="path">Putanja na kojoj se direktorijum kreira(po uslovu zadatka to je uvijek root)</param>
+        private void MakeDirectory(string name, string path = "root/")
+        {
+            name = CheckName(name, path, 'd');
+
+            Directory directory = new Directory(name, GetNewId(), DateTime.Now, path);
+            if(directory.WriteToMFT())
+            {
+                numberOfDirectories++;
+                Update();
+            }
+            
+        }
+        
+        /// <summary>
+        /// Funkcija se poziva prilikom unosa komande "create"
+        /// Funkcija kreira objekat tipa FileOnFS i podatke upisuje u FileSystem.bin datoteku u vidu jednog zapisa u MFT tabeli
+        /// </summary>
+        /// <param name="name">Naziv fajla koji se kreira</param>
+        /// <param name="path">Putanja na kojoj se fajl kreira</param>
+        private void CreateFile(string name, string path = "root/")
+        {
+            if(!path.EndsWith("/"))
+            {
+                path += '/';
+            }
+
+            if (!path.Equals("root/")) //Pošto korisnik može da unese putanju na kojoj želi da se kreira fajl, potrebno ju je provjeriti
+            {
+                //Ako korisnik želi da kreira fajl npr. na putanji root/folder1 potrebno je provjeriti da li postoji folder1
+                string tmpPath, tmpName;
+                (tmpName, tmpPath) = SplitPath(path.Substring(0, path.Length - 1)); //pošto putanja završava sa / trebam izbaciti taj znak
+                if(tmpName == "" || tmpPath == "")
+                {
+                    Console.WriteLine("Greska - unesena je nepostojeca putanja.");
+                    return;
+                }
+                if(!Exists(tmpName, tmpPath))
+                {
+                    Console.WriteLine("Greska - pokusavate dodati fajl {0} u folder {1} koji ne postoji na fajl sistemu.", name, tmpName);
+                    return;
+                }
+            }
+
+            name = CheckName(name, path, 'f');
+
+            FileOnFS file = new FileOnFS(name, GetNewId(), DateTime.Now, path);
+            if (file.WriteToMFT())
+            {
+                numberOfFiles++;
+                Update();
+            }
+        }
+        
+        /// <summary>
+        /// Funkcija vraća niz ID-jeva (u formatu stringa) fajlova koji se nalaze u zadatom folderu
+        /// </summary>
+        /// <param name="name">naziv direktorijuma čiji se sadržaj traži</param>
+        /// <returns></returns>
+        private string[] GetFilesOfDirectory(string nameOfDirectory)
         {
             LinkedList<string> files = new LinkedList<string>();
 
@@ -284,7 +421,7 @@ namespace FileSystemImplementation
             string line = reader.ReadLine();
             while (!line.Contains(separator))
             {
-                if (line.Contains("~root/" + name + "/"))
+                if (line.Contains("~root/" + nameOfDirectory + "/"))
                 {
                     files.AddLast(line.Split('~')[2]);
                 }
@@ -294,6 +431,13 @@ namespace FileSystemImplementation
 
             return files.ToArray();
         }
+        
+        /// <summary>
+        /// Funkcija odgovara komandi "rm -r"
+        /// Funkcija briše folder i njegov kompletan sadržaj
+        /// </summary>
+        /// <param name="name"></param>
+        /// <param name="path"></param>
         private void RemoveDirectory(string name, string path = "root/")
         {
             if(name.StartsWith("root/"))
@@ -318,6 +462,14 @@ namespace FileSystemImplementation
             Update();
 
         }
+
+        /// <summary>
+        /// Pomoćna funkcija, uklanja zapis iz MFT tabele
+        /// Funkcija pročita cijeli fajl kao niz bajtova, pronađe odgovarajući podniz koji treba ukloniti a zatip prepiše binarnu datoteku sadrzajem koji se ne briše
+        /// </summary>
+        /// <param name="type">'d' ako je direktorijum, 'f' ako je fajl</param>
+        /// <param name="name">naziv fajla/foldera koji se uklanja</param>
+        /// <param name="path">putanja na kojoj se traženi fajl/folder nalazi</param>
         private void RemoveMftRecord(char type, string name, string path = "root/")
         {
             byte[] contentOfFS = File.ReadAllBytes("FileSystem.bin");
@@ -331,12 +483,12 @@ namespace FileSystemImplementation
                 {
                     if(type == 'd')
                     {
-                        start = i - 4;
+                        start = i - 4; //početak linije koju treba obrisati
                         break;
                     }
                     else if(type == 'f')
                     {
-                        start = i - 5;
+                        start = i - 5; //početak linije koju treba obrisati
                         break;
                     }
                 }
@@ -347,7 +499,7 @@ namespace FileSystemImplementation
                 {
                     end = i;
                     break;
-                } //znaci trazim prvi znak za novi red
+                } //znaci trazim prvi znak za novi red - tu je kraj linije koju trebam brisati
             }
 
             List<byte> newContentOfFS = new List<byte>();
@@ -363,6 +515,10 @@ namespace FileSystemImplementation
             RewriteFS(newContentOfFS.ToArray());
         }
 
+        /// <summary>
+        /// Pomoćna funkcija koja obriše trenutni sadržaj datoteke FileSystem.bin i upiše novi sadržaj
+        /// </summary>
+        /// <param name="content">novi sadržaj koji se upisuje</param>
         private void RewriteFS(byte[] content)
         {
             BinaryWriter writer = new BinaryWriter(new FileStream("FileSystem.bin", FileMode.Truncate));
@@ -370,6 +526,12 @@ namespace FileSystemImplementation
             writer.Close();
         }
 
+        /// <summary>
+        /// Funkcija odgovara komandi "rm"
+        /// Uklanja fajl sa fajl sistema
+        /// </summary>
+        /// <param name="name"></param>
+        /// <param name="path"></param>
         private void RemoveFile(string name, string path = "root/")
         {
             if (!Exists(name, path))
@@ -392,6 +554,13 @@ namespace FileSystemImplementation
             Update();
 
         }
+
+        /// <summary>
+        /// Funkcija odgovara komandi cat
+        /// Ispisuje sadržaj tekstualne datoteke
+        /// </summary>
+        /// <param name="name"></param>
+        /// <param name="path"></param>
         private void GetContentOfFile(string name, string path = "root/")
         {
             if (!Exists(name, path))
@@ -421,6 +590,12 @@ namespace FileSystemImplementation
                 Console.Write('\n');
             }
         }
+
+        /// <summary>
+        /// Pomoćna funkcija koja služi za uklanjanje "korisnog sadržaja" fajla
+        /// FS se pročita u niz bajtova i pretraga se vrši na osnovu ID-ja fajla
+        /// </summary>
+        /// <param name="_id"></param>
         private void DeleteFromDataSegment(byte[] _id)
         {
             byte[] _contentOfFS = File.ReadAllBytes("FileSystem.bin");
@@ -440,9 +615,23 @@ namespace FileSystemImplementation
 
             Update();
         }
-        private void WriteToDataSegment(byte[] _id, byte[] content)
+
+        /// <summary>
+        /// Pomoćna funkcija koja dodaje sadržaj datoteke u data segment
+        /// Funkcija uvijek dodaje na kraj FileSystem.bin datoteke
+        /// </summary>
+        /// <param name="_id"></param>
+        /// <param name="content"></param>
+        private bool WriteToDataSegment(byte[] _id, byte[] content)
         {
             byte[] oldContent = File.ReadAllBytes("FileSystem.bin");
+
+            if(content.Length + _id.Length + 8 > freeSpace)
+            {
+                Console.WriteLine("Greška - nije moguće izvršiti radnju jer nema dovoljno memorije na fajl sistemu.");
+                return false;
+            }
+
             BinaryWriter writer = new BinaryWriter(new FileStream("FileSystem.bin", FileMode.Truncate));
             writer.Write(oldContent);
             writer.Write((byte)'~');
@@ -457,7 +646,15 @@ namespace FileSystemImplementation
             writer.Write((byte)'~');
             writer.Close();
             Update();
+
+            return true;
         }
+
+        /// <summary>
+        /// Pomoćna funkcija koja čita sadržaj datoteke na osnovu njenog ID-ja
+        /// </summary>
+        /// <param name="_id"></param>
+        /// <returns>vraća sadržaj kao niz bajtova</returns>
         private byte[] ReadFromDataSegment(byte[] _id)
         {
             byte[] _contentOfFS = File.ReadAllBytes("FileSystem.bin");
@@ -473,7 +670,13 @@ namespace FileSystemImplementation
 
             return contentOfFile.ToArray();
         }
-        private (int, int) GetStartAndEndPositions(byte[] _id) //funkcija vracapocetak i kraj sadrzaja datoteke (zapis u data segmentu)
+
+        /// <summary>
+        /// Funkcija čita FS kao niz bajtova i u zadatom nizu traži početni i krajnji indeks između kojih se nalazi sadržaj fajla
+        /// </summary>
+        /// <param name="_id"></param>
+        /// <returns>vraća uređeni par (int start, int end) </returns>
+        private (int, int) GetStartAndEndPositions(byte[] _id)
         {
             byte[] _contentOfFS = File.ReadAllBytes("FileSystem.bin");
             int start = 0, end = 0; //promjenljive koje ce mi u prethodnom nizu oznaciti pocetak i kraj data segmenta trazenog fajla
@@ -496,7 +699,12 @@ namespace FileSystemImplementation
             return (start, end);
         }
 
-        //RADIIIII
+        /// <summary>
+        /// Funkcija odgovara komandi "echo"
+        /// Funkcija upisuje sadržaj koji korisnik unese u tekstualnu datoteku
+        /// </summary>
+        /// <param name="name"></param>
+        /// <param name="path"></param>
         private void WriteToFile(string name, string path = "root/")
         {
             if(!Exists(name, path))
@@ -530,10 +738,17 @@ namespace FileSystemImplementation
 
             if (initialSize == 0)
             {
-                WriteToDataSegment(_id, _contentOfFile);
+                if (!WriteToDataSegment(_id, _contentOfFile))
+                    return;
             }
             else if (initialSize > 0)
             {
+                if(contentOfFile.Count > freeSpace)
+                {
+                    Console.WriteLine("Greska - nije moguće dovršiti radnju jer nema dovoljno memorije na fajl sistemu.");
+                    return;
+                }
+
                 byte[] _oldContentOfFile = ReadFromDataSegment(_id);
                 List<byte> oldContentOfFile = _oldContentOfFile.ToList();
 
@@ -548,7 +763,13 @@ namespace FileSystemImplementation
 
             Update();
         }
-        
+
+        /// <summary>
+        /// Pomoćna funkcija koja ažurira veličinu fajla(u MFT zapisu)
+        /// </summary>
+        /// <param name="name"></param>
+        /// <param name="path"></param>
+        /// <param name="newSize"></param>
         private void UpdateSizeOfFile(string name, string path, int newSize)
         {
             byte[] _id = GetFileID(name, path);
@@ -572,7 +793,7 @@ namespace FileSystemImplementation
                         {
                             br++;
                         }
-                        if (br == 4) //kad nadjem cetvrto ~ onda trazim znak za novi red jer od tog novor reda ostale bajtove trebam prepisati
+                        if (br == 4) //kad nadjem cetvrto ~ onda trazim znak za novi red jer od tog novog reda ostale bajtove trebam prepisati
                         {
                             index1 = j + 1;
                             for (int k = index1; k < contentOfFS.Length; k++)
@@ -609,6 +830,12 @@ namespace FileSystemImplementation
             Update();
         }
 
+        /// <summary>
+        /// Pomoćna funkcija, vraća datum kreiranja za dati fajl
+        /// </summary>
+        /// <param name="name"></param>
+        /// <param name="path"></param>
+        /// <returns></returns>
         private string GetDateCreated(string name, string path)
         {
             StreamReader reader = new StreamReader(new FileStream("FileSystem.bin", FileMode.Open));
@@ -626,6 +853,12 @@ namespace FileSystemImplementation
             return "-1";
         }
 
+        /// <summary>
+        /// Pomoćna funkcija, vraća ID traženog fajla
+        /// </summary>
+        /// <param name="name"></param>
+        /// <param name="path"></param>
+        /// <returns></returns>
         private byte[] GetFileID(string name, string path = "root/")
         {
             if (!path.EndsWith("/"))
@@ -652,6 +885,12 @@ namespace FileSystemImplementation
             return error;
         }
 
+        /// <summary>
+        /// Pomoćna funkcija, vraća ID traženog fajla
+        /// </summary>
+        /// <param name="name"></param>
+        /// <param name="path"></param>
+        /// <returns></returns>
         private int GetSizeOfFile(string name, string path)
         {
             StreamReader reader = new StreamReader(new FileStream("FileSystem.bin", FileMode.Open));
@@ -670,40 +909,21 @@ namespace FileSystemImplementation
             return -1;
         }
 
-        //RADI I OVA
-        private void CreateFile(string name, string path = "root/")
-        {
-            if(!path.EndsWith("/"))
-            {
-                path += '/';
-            }
-
-            if(!path.Equals("root/"))
-            {
-                Regex regex = new Regex(@"(root/)([A-Za-z0-9.-]+)/"); //Provjera da li je validan zapis putanje, tj. da li je putanja unesena u obliku root/naziv_foldera
-                Match match = regex.Match(path);
-
-                if (match.Value != path || !Exists(match.Groups[2].Value, match.Groups[1].Value)) //Ili je putanja unesena u nepravilnom obliku ili ne postoji taj folder unutar root-a
-                {
-                    Console.WriteLine("Greska - unesena je nepostojeca putanja");
-                    return;
-                }
-            }
-
-            name = CheckName(name, path, 'f');
-
-            FileOnFS file = new FileOnFS(name, GetNewId(), DateTime.Now, path);
-            file.WriteToFile();
-            
-            numberOfFiles++;
-            Update();
-        }
-
+        /// <summary>
+        /// Funkcija odgovara komandi "stat", ispisuje podatke o datoteci
+        /// </summary>
+        /// <param name="name"></param>
+        /// <param name="path"></param>
         private void GetFileInformation(string name, string path = "root/")
         {
             if (!Exists(name, path))
             {
                 Console.WriteLine("Greska - ne postoji datoteka sa nazivom {0} na trenutnoj putanji", name);
+                return;
+            }
+            if(GetType(name, path) == 'd')
+            {
+                Console.WriteLine("Greska - komanda stat radi sa datotekama");
                 return;
             }
 
@@ -717,21 +937,21 @@ namespace FileSystemImplementation
                 Console.Write((char)_id[i]);
             Console.WriteLine("\nPutanja: " + path + name);
             Console.WriteLine("Datum i vrijeme kreiranja: " + GetDateCreated(name, path));
-            Console.WriteLine("Velicina: " + GetSizeOfFile(name, path));
+            Console.WriteLine("Velicina: " + GetSizeOfFile(name, path) + "b");
             Console.WriteLine("Broj blokova: {0}", Math.Ceiling((double)GetSizeOfFile(name, path)/(double)SIZE_OF_BLOCK));
             Console.WriteLine("Pocetna lokacija blokova: {0}", start);
         }
 
-        //RADIIII
-        private void MoveFile(string name, string newPath, string path = "root/") //Ako se zeli premjestiti datoteka koja je na putanji root/folder/datoteka, funkcija ce se pozvati sa putanje root/folder
+        /// <summary>
+        /// Funkcija odgovara komandi "mv", premješta fajl na novu putanju
+        /// </summary>
+        /// <param name="name"></param>
+        /// <param name="newPath"></param>
+        /// <param name="path"></param>
+        private void MoveFile(string name, string newPath, string path = "root/")
         {
-            if (!Exists(name, path)) //Ako neko pokusa premjestiti datoteku koja ne postoji na trenutnoj putanji
-            {
-                Console.WriteLine("Greska - ne postoji datoteka sa nazivom {0} na trenutnoj putanji", name);
-                return;
-            }
-
-            if(!newPath.EndsWith("/"))
+            //Ako se zeli premjestiti datoteka koja je na putanji root/folder/datoteka, funkcija ce se pozivati sa putanje root/folder
+            if (!newPath.EndsWith("/"))
             {
                 newPath += "/";
             }
@@ -740,20 +960,31 @@ namespace FileSystemImplementation
                 path += "/";
             }
 
-            if(newPath != "root/") //Ako se premjesta na neku putanju poput root/naziv_foldera
+            if (!Exists(name, path)) //Ako neko pokusa premjestiti datoteku koja ne postoji na trenutnoj putanji
             {
-                Regex regex = new Regex(@"(root/)([A-Za-z0-9.-]+)/"); //Provjera da li je validan zapis putanje, tj. da li je putanja unesena u obliku root/naziv_foldera
-                Match match = regex.Match(newPath);
+                Console.WriteLine("Greska - ne postoji datoteka sa nazivom {0} na trenutnoj putanji", name);
+                return;
+            }
 
-                if (match.Value != newPath || !Exists(match.Groups[2].Value, match.Groups[1].Value)) //Ili je putanja unesena u nepravilnom obliku ili ne postoji taj folder unutar root-a
+            if (!path.Equals("root/")) //Potrebno je provjeriti putanju na koju korisnik želi da premjesti fajl
+            {
+                //Ako korisnik želi da premjesti fajl npr. na putanju root/folder1 potrebno je provjeriti da li postoji folder1
+                string tmpPath, tmpName;
+                (tmpName, tmpPath) = SplitPath(path.Substring(0, path.Length - 1)); //pošto putanja završava sa / trebam izbaciti taj znak
+                if (tmpName == "" || tmpPath == "")
                 {
-                    Console.WriteLine("Greska - unesena je nepostojeca putanja");
+                    Console.WriteLine("Greska - unesena je nepostojeca putanja.");
+                    return;
+                }
+                if (!Exists(tmpName, tmpPath))
+                {
+                    Console.WriteLine("Greska - pokusavate dodati fajl {0} u folder {1} koji ne postoji na fajl sistemu.", name, tmpName);
                     return;
                 }
             }
 
             //Provjera da li na novoj putanji vec postoji datoteka sa istim nazivom
-            if(Exists(name, newPath))
+            if (Exists(name, newPath))
             {
                 Console.WriteLine("Greska - na zadatoj putanji vec postoji datoteka sa nazivom {0}", name);
                 return;
@@ -797,7 +1028,12 @@ namespace FileSystemImplementation
             Update();
         }
 
-        //RADIII
+        /// <summary>
+        /// Komanda "rename" - promjena naziva fajla/foldera
+        /// </summary>
+        /// <param name="name"></param>
+        /// <param name="newName"></param>
+        /// <param name="path"></param>
         private void Rename(string name, string newName, string path ="root/")
         {
             if(!path.EndsWith("/"))
@@ -861,8 +1097,10 @@ namespace FileSystemImplementation
             Update();
         }
 
-
-        //RADI - NE DIRAJ !
+        /// <summary>
+        /// Funkcija odgovara komandi ls, ispisuje sadržaj foldera u kom je korisnik trenutno pozicioniran
+        /// </summary>
+        /// <param name="path"></param>
         private void GetContentOfDirectory(string path = "root/")
         {
             StreamReader reader = new StreamReader(new FileStream("FileSystem.bin", FileMode.Open));
@@ -889,28 +1127,20 @@ namespace FileSystemImplementation
             reader.Close();
         }
 
+        /// <summary>
+        /// Funkcija odgovara komandi "cd" i predstavlja rad programa dok je korisnik pozicioniran u neki folder na fajl sistemu
+        /// </summary>
+        /// <param name="name"></param>
         private void OpenDirectory(string name)
         {
             string currentPath = "root/" + name;
 
-            StreamReader reader = new StreamReader(new FileStream("FileSystem.bin", FileMode.Open));
-            _ = reader.ReadLine();
-            Regex regex2 = new Regex(@"[A-Za-z0-9/ :.-]+");
-            bool flag = false;
+            bool flag = true;
 
-            string line = reader.ReadLine();
-            while(!line.Contains(separator)) //Prodje kroz MFT(zapisi o datotekama i direktorijumima) i pretrazi da li postoji dati folder
-            {
-                MatchCollection matches = regex2.Matches(line);
-                if (matches[0].Value == "dir" && matches[2].Value == name && matches[3].Value == (currentPath))
-                {
-                    flag = true;
-                    break;
-                }
-                line = reader.ReadLine();
-            }
-            reader.Close();
-            
+            if (!Exists(name, "root/"))
+                flag = false;
+            if (GetType(name, "root/") != 'd')
+                flag = false;
 
             if (!flag)
             {
@@ -919,7 +1149,6 @@ namespace FileSystemImplementation
             }
             else
             {
-                //TODO: ISPRAVITI WHILE PELJU
                 while(true)
                 {
                     Console.Write(currentPath.Replace("root", "HOME") + ">");
@@ -937,7 +1166,7 @@ namespace FileSystemImplementation
                             Console.Clear();
                             break;
 
-                        case "ls": //RADI - NE DIRAJ NISTA - 5. funkcija
+                        case "ls":
                             {
                                 if (words.Count() == 1)
                                 {
@@ -950,7 +1179,7 @@ namespace FileSystemImplementation
                                 break;
                             }
 
-                        case "cd": //RADI - moja funkcija
+                        case "cd":
                             {
                                 if(words.Count() == 2 && words[1] != "..")
                                 {
@@ -958,7 +1187,7 @@ namespace FileSystemImplementation
                                 }
                                 else if (words.Count() == 2 && words[1] == "..")
                                 {
-                                    return; //Izlazak iz trenutno otvorenog foldera
+                                    return; //Izlazak iz trenutno otvorenog foldera, izlazi se iz ove funkcije i vraća se u funkciju ExecuteFileSystem jer je OpenDirectory iz nje pozvana
                                 }
                                 else
                                 {
@@ -967,7 +1196,7 @@ namespace FileSystemImplementation
                                 break;
                             }
 
-                        case "help": //DOBRO JE - moja funkcija
+                        case "help":
                             {
                                 if (words.Count() == 1)
                                 {
@@ -984,11 +1213,11 @@ namespace FileSystemImplementation
                                 break;
                             }
 
-                        case "df": //DOBRO JE - NE DIRAJ NISTA - moja funkcija
+                        case "df":
                             {
                                 if (words.Count() == 1) //df mi je samo za slobodan memorijski prostor
                                 {
-                                    GetRootInformation(false); //jedinicu saljem kao neki flag da bi mi ispisalo samo slobodan mem. prostor
+                                    GetRootInformation(false);
                                 }
                                 else if (words.Count() == 2 && words[1] == "-h") // df -h je za ispis svih podataka o fajl sistemu
                                 {
@@ -1001,7 +1230,7 @@ namespace FileSystemImplementation
                                 break;
                             }
 
-                        case "mkdir": //RADII - 1. funkcija
+                        case "mkdir":
                             {
                                 if (words.Count() == 2)
                                 {
@@ -1014,7 +1243,7 @@ namespace FileSystemImplementation
                                 break;
                             }
 
-                        case "create": //RADIIIIII - 2. funkcija
+                        case "create":
                             {
                                 if (words.Count() == 2)
                                 {
@@ -1031,7 +1260,7 @@ namespace FileSystemImplementation
                                 break;
                             }
                              
-                        case "rename": //RADIIII - 8. funkcija
+                        case "rename":
                             {
                                 if (words.Count() == 3)
                                 {
@@ -1044,7 +1273,7 @@ namespace FileSystemImplementation
                                 break;
                             }
 
-                        case "mv": //7. funkcija
+                        case "mv":
                             {
                                 if (words.Count() == 3)
                                 {
@@ -1160,7 +1389,12 @@ namespace FileSystemImplementation
             }
         }
 
-        private (string, string) CheckPath(string pathToCheck)
+        /// <summary>
+        /// Pomoćna funkcija koja za unesenu putanju vraća naziv fajla/foldera i putanju na kom se taj fajl/folder nalazi
+        /// </summary>
+        /// <param name="pathToCheck"></param>
+        /// <returns></returns>
+        private (string, string) SplitPath(string pathToCheck)
         {
             string path = "", name = "";
             if(pathToCheck.StartsWith("root/")) //svaka validna putanja pocinje sa root
@@ -1178,24 +1412,13 @@ namespace FileSystemImplementation
                 }
             }
             return (path, name);
-            /*
-            Regex regex1 = new Regex(@"(root/)([A-Za-z0-9.-]+)"); //Provjera da li je validan zapis putanje, tj. da li je putanja unesena u obliku root/naziv_foldera
-            Regex regex2 = new Regex(@"(root/)([A-Za-z0-9.-]+)/([A-Za-z0-9.-]+)");
-            Match match1 = regex1.Match(pathToCheck);
-            Match match2 = regex2.Match(pathToCheck);
-
-            if (match1.Value == pathToCheck)
-            {
-                return (match1.Groups[1].Value, match1.Groups[2].Value);
-            }
-            else if (match2.Value == pathToCheck)
-            {
-                return (match1.Groups[1].Value + match1.Groups[2].Value, match1.Groups[3].Value);
-            }
-            return ("", "");*/
         }
 
-        private void GetFile() //sa ovog fajl sistema na racunar
+        /// <summary>
+        /// Funkcija odgovara komandi "get"
+        /// Funkcija kreira fajl na fajl sistemu racunara na osnovu fajla koji se nalazi na ovom fajl sistemu
+        /// </summary>
+        private void GetFile()
         {
             Console.WriteLine("Unesite putanju ulaznog fajla(primjer: root/folder/datoteka):");
             string inputPath = Console.ReadLine();
@@ -1203,7 +1426,7 @@ namespace FileSystemImplementation
             string outputPath = Console.ReadLine();
 
             string iPath, iFile;
-            (iPath, iFile) = CheckPath(inputPath);
+            (iPath, iFile) = SplitPath(inputPath);
             if (iPath == "" && iFile == "")
             {
                 Console.WriteLine("Greska - unesena je nevazeca putanja {0}", inputPath);
@@ -1229,7 +1452,12 @@ namespace FileSystemImplementation
             }
             
         }
-        private void PutFile() //sa racunara na ovaj fajl sistem
+
+        /// <summary>
+        /// Funkcija odgovara komandi "put"
+        /// Omogućava dodavanje fajla sa fajl sistema računara na ovaj fajl sistem
+        /// </summary>
+        private void PutFile()
         {
             Console.WriteLine(@"Unesite putanju ulaznog fajla(primjer: C:\\Users\\Tatjana Tomic\\Desktop\\dat.txt):");
             string inputPath = Console.ReadLine();
@@ -1243,7 +1471,7 @@ namespace FileSystemImplementation
             }
 
             string oPath, oFile;
-            (oPath, oFile) = CheckPath(outputPath);
+            (oPath, oFile) = SplitPath(outputPath);
             if (oPath == "" && oFile == "")
             {
                 Console.WriteLine("Greska - unesena je nevazeca putanja {0}", outputPath);
@@ -1259,7 +1487,7 @@ namespace FileSystemImplementation
             if(oPath != "root")
             {
                 string tmpPath, tmpName;
-                (tmpPath, tmpName) = CheckPath(oPath);
+                (tmpPath, tmpName) = SplitPath(oPath);
                 if(!Exists(tmpName, tmpPath))
                 {
                     Console.WriteLine("Greska - pokusavate dodatati fajl {0} u folder {1} koji ne postoji na fajl sistemu.", oFile, tmpName);
@@ -1293,13 +1521,23 @@ namespace FileSystemImplementation
             CreateFile(oFile, oPath);
             byte[] _id = GetFileID(oFile, oPath);
 
-            WriteToDataSegment(_id, _contentOfInputFile);
+            if(!WriteToDataSegment(_id, _contentOfInputFile))
+            {
+                Console.WriteLine("Greska - nije moguce dovrsiti radnju jer nema dovoljno memorije na fajl sistemu");
+                return;
+            }
 
             UpdateSizeOfFile(oFile, oPath, _contentOfInputFile.Length);
 
             Update();
         }
 
+        /// <summary>
+        /// Funkcija predstavlja komandu "cp"
+        /// Funkcija kreira kopiju datoteke
+        /// </summary>
+        /// <param name="name"></param>
+        /// <param name="path"></param>
         private void CopyFile(string name, string path = "root/")
         {
             if (!Exists(name, path))
@@ -1323,49 +1561,178 @@ namespace FileSystemImplementation
             {
                 byte[] contentOfFile = ReadFromDataSegment(GetFileID(name, path)); //procitam sadrzaj originalnog fajla - name
 
-                WriteToDataSegment(GetFileID(newName, path), contentOfFile); //upisem u kopiju - newName
+                if(!WriteToDataSegment(GetFileID(newName, path), contentOfFile)) //upisem u kopiju - newName
+                {
+                    Console.WriteLine("Greska - nije moguce dovrsiti radnju jer nema dovoljno memorije na fajl sistemu.");
+                    return;
+                }
 
                 UpdateSizeOfFile(newName, path, contentOfFile.Length);
             }
         }
 
-        //NE DIRAJ NISTA - RADI
-        private void LoadData()
+        /// <summary>
+        /// Pomoćna funkcija koja za dati fajl/folder na datoj putanji vraća tip
+        /// 'd' ako je direktorijum, 'f' ako je fajl
+        /// </summary>
+        /// <param name="name"></param>
+        /// <param name="path"></param>
+        /// <returns></returns>
+        private char GetType(string name, string path)
         {
+            if (!path.EndsWith("/"))
+                path += "/";
+
+            char type = 'x'; //u slucaju da ne pronadje trazini fajl, vratice x
             StreamReader reader = new StreamReader(new FileStream("FileSystem.bin", FileMode.Open));
-            string firstLine = reader.ReadLine();
+            string line = reader.ReadLine();
+            while (!line.Contains(separator))
+            {
+                if (line.Contains("~" + path + name + "~"))
+                {
+                    type = line[0];
+                    break;
+                }
+                line = reader.ReadLine();
+            }
             reader.Close();
-
-            Regex regex = new Regex(@"[0-9]+");
-            MatchCollection matches = regex.Matches(firstLine);
-
-            string _numberOfDirectories = matches[0].Value;
-            numberOfDirectories = Convert.ToInt32(_numberOfDirectories);
-
-            string _numberOfFiles = matches[1].Value;
-            numberOfFiles = Convert.ToInt32(_numberOfFiles);
-
-            string _usedSpace = matches[2].Value;
-            usedSpace = Convert.ToInt32(_usedSpace);
-
-            string _freeSpace = matches[4].Value;
-            freeSpace = Convert.ToInt32(_freeSpace);
-        }
-
-        //RADI I OVO
-        private void CreateFileSystem()
-        {
-            StreamWriter writer1 = new StreamWriter(new FileStream("FileSystem.bin", FileMode.Create));
-            writer1.Write("HOME~" + numberOfDirectories.ToString().PadLeft(8)
-                            + "~" + numberOfFiles.ToString().PadLeft(8)
-                            + "~" + initialUsedSpace.ToString().PadLeft(8)
-                            + "~" + initialFreeSpace.ToString().PadLeft(8)
-                            + "~" + MAX_SIZE_OF_FILE_SYSTEM + "~" + '\n');
-            writer1.Write(separator + '\n');
-            writer1.Close();
+            return type;
         }
         
-        //RADI
+        /// <summary>
+        /// Funkcija koja odgovara komandama "df" i "df -h"
+        /// Ako je proslijeđeni parametar true znači da je zadana komanda df -h
+        /// Ako je proslijeđeni parametar false znači da je zadana komanda df i potrebno je samo ispisati slobodan memorijski prostor
+        /// </summary>
+        /// <param name="flag"></param>
+        private void GetRootInformation(bool flag = true)
+        {
+            if (flag)
+            {
+                Console.WriteLine("Broj direktorijuma: " + numberOfDirectories);
+                Console.WriteLine("Broj datoteka: " + numberOfFiles);
+                Console.WriteLine("Iskoriscen memorijski prostor: " + usedSpace + "b");
+                Console.WriteLine("Slobodan memorijski prostor: " + freeSpace + "b");
+                Console.WriteLine("Ukupna velicina fajl sistema: " + MAX_SIZE_OF_FILE_SYSTEM + "b");
+            }
+            else
+            {
+                Console.WriteLine("Slobodan memorijski prostor: " + freeSpace + "b");
+            }
+        }
+        
+        /// <summary>
+        /// Funkcija se poziva prilikom dodavanja novog fajla/foldera ili promjene naziva i provjerava da li je naziv u odgovarajućem formatu
+        /// Funkcija se izvršava dok korisnik ne unese validan naziv
+        /// </summary>
+        /// <param name="name">novi naziv fajla/foldera</param>
+        /// <param name="path">putanja na kojoj se dodaje fajl/folder</param>
+        /// <param name="type">type='f' ako je name naziv fajla, type='d' ako je name naziv direktorijuma</param>
+        /// <returns></returns>
+        private string CheckName(string name, string path, char type)
+        {
+            while(true)
+            {
+                Match match;
+                if(type == 'd')
+                    match = (new Regex(@"[A-Za-z0-9-]+")).Match(name);
+                else
+                    match = (new Regex(@"[A-Za-z0-9-]+\.[A-Za-z0-9]+")).Match(name);
+
+                bool exists = Exists(name, path); 
+
+                if (name.Length <= 20 && !exists && match.Value == name)
+                {
+                    return name;
+                }
+                else if(name.Length > 20)
+                {
+                    Console.WriteLine("Greska - naziv je predugacak.");
+                    Console.WriteLine("Unesite novi naziv");
+                    name = Console.ReadLine();
+                }
+                else if(match.Value != name)
+                {
+                    Console.WriteLine("Greska - naziv datoteke ili direktorijuma moze sadrzati velika i mala slova, brojeve i \"-\". Naziv datoteke unesite u formatu naziv.ekstenzija.");
+                    Console.WriteLine("Unesite novi naziv");
+                    name = Console.ReadLine();
+                }
+                else if(exists)
+                {
+                    Console.WriteLine("Greska - vec postoji datoteka ili direktorijum sa datim nazivom");
+                    Console.WriteLine("Unesite novi naziv");
+                    name = Console.ReadLine();
+                }
+            }
+        }
+        
+        /// <summary>
+        /// Funkcija provjerava da li na zadatoj putanji postoji fajl/folder sa datim nazivom
+        /// Funkcija čita liniju po liniju datoteke FileSystem.bin dok ne dodje do separatora i provjerava da li postoji traženi fajl/folder
+        /// </summary>
+        /// <param name="name">naziv fajla/foldera</param>
+        /// <param name="path">putanja na kojoj bi se trebao nalaziti</param>
+        /// <returns>Funkcija vraća tru/false u zavisnosti od toga da li postoji fajl/folder</returns>
+        private bool Exists(string name, string path)
+        {
+            bool flag = false;
+
+            if (!path.EndsWith("/"))
+                path += "/";
+
+            StreamReader reader = new StreamReader(new FileStream("FileSystem.bin", FileMode.Open));
+            string line = reader.ReadLine();
+            while (!line.Contains(separator))
+            {
+                if(line.Contains("~" + path + name + "~"))
+                {
+                    flag = true;
+                    break;
+                }
+                line = reader.ReadLine();
+            }
+            reader.Close();
+            return flag;
+        }
+        
+        /// <summary>
+        /// Funkcija dodjeljuje ID novom fajlu/folderu
+        /// Funkcija čita posljednji upisan ID u ListOfIdentificators.txt fajlu(ako fajl postoji), vraća cijeli broj za 1 veći i upisuje njegovu vrijednost u fajl
+        /// Ako fajl ne postoji, funkcija ga kreira i vraća broj 100 kao ID
+        /// </summary>
+        /// <returns></returns>
+        private int GetNewId()
+        {
+            StreamReader reader = new StreamReader(new FileStream("ListOfIdentificators.txt", FileMode.OpenOrCreate));
+            string _lastId = reader.ReadLine();
+            string content = reader.ReadToEnd();
+            reader.Close();
+
+            int lastId;
+            if(_lastId != null)
+            {
+                lastId = Convert.ToInt32(_lastId);
+            }
+            else
+            {
+                lastId = 100;
+            }
+
+            int newId = lastId + 1;
+
+            StreamWriter writer = new StreamWriter(new FileStream("ListOfIdentificators.txt", FileMode.OpenOrCreate));
+            writer.WriteLine(newId);
+            writer.WriteLine(_lastId);
+            writer.WriteLine(content);
+            writer.Close();
+
+            return newId;
+        }
+        
+        /// <summary>
+        /// Funkcija predstavlja uputstvo za korišćenje programa, ispisuje listu svih komandi i detaljan opis svake komande.
+        /// </summary>
+        /// <param name="method"></param>
         private void Help(string method)
         {
             switch(method)
@@ -1437,178 +1804,8 @@ namespace FileSystemImplementation
                 default:
                     Console.WriteLine("Greska - nepostojeca opcija! Za listu svih opcija unesite \"help\"");
                     break;
-
-
             }
             
         }
-
-        private char GetType(string name, string path)
-        {
-            if (!path.EndsWith("/"))
-                path += "/";
-
-            char type = 'x'; //u slucaju da ne pronadje trazini fajl, vratice x
-            StreamReader reader = new StreamReader(new FileStream("FileSystem.bin", FileMode.Open));
-            string line = reader.ReadLine();
-            while (!line.Contains(separator))
-            {
-                if (line.Contains("~" + path + name + "~"))
-                {
-                    type = line[0];
-                    break;
-                }
-                line = reader.ReadLine();
-            }
-            reader.Close();
-            return type;
-        }
-
-        //NE DIRAJ!!!
-        private void GetRootInformation(bool flag = true) //opcija df
-        {
-            if (flag) //ako je true znaci da je pozvana opcija df -h
-            {
-                Console.WriteLine("Broj direktorijuma: " + numberOfDirectories);
-                Console.WriteLine("Broj datoteka: " + numberOfFiles);
-                Console.WriteLine("Iskoriscen memorijski prostor: " + usedSpace + "b");
-                Console.WriteLine("Slobodan memorijski prostor: " + freeSpace + "b");
-                Console.WriteLine("Ukupna velicina fajl sistema: " + MAX_SIZE_OF_FILE_SYSTEM + "b");
-            }
-            else //ako je proslijedjeno false, znaci da je pozvana opcija df
-            {
-                Console.WriteLine("Slobodan memorijski prostor: " + freeSpace + "b");
-            }
-        }
-
-        //Ne DIRAJ
-        private void MakeDirectory(string name, string path = "root/")
-        {
-            name = CheckName(name, path, 'd');
-
-            Directory directory = new Directory(name, GetNewId(), DateTime.Now, path);
-            directory.WriteToFile();
-            numberOfDirectories++;
-            Update();
-        }
-
-        private string CheckName(string name, string path, char type)
-        {
-            while(true)
-            {
-                Match match;
-                if(type == 'd')
-                    match = (new Regex(@"[A-Za-z0-9-]+")).Match(name);
-                else
-                    match = (new Regex(@"[A-Za-z0-9-]+\.[A-Za-z0-9]+")).Match(name);
-
-                bool exists = Exists(name, path); 
-
-                if (name.Length <= 20 && !exists && match.Value == name)
-                {
-                    return name;
-                }
-                else if(name.Length > 20)
-                {
-                    Console.WriteLine("Greska - naziv je predugacak.");
-                    Console.WriteLine("Unesite novi naziv");
-                    name = Console.ReadLine();
-                }
-                else if(match.Value != name)
-                {
-                    Console.WriteLine("Greska - naziv datoteke ili direktorijuma moze sadrzati velika i mala slova, brojeve i \"-\". Naziv datoteke unesite u formatu naziv.ekstenzija.");
-                    Console.WriteLine("Unesite novi naziv");
-                    name = Console.ReadLine();
-                }
-                else if(exists)
-                {
-                    Console.WriteLine("Greska - vec postoji datoteka ili direktorijum sa datim nazivom");
-                    Console.WriteLine("Unesite novi naziv");
-                    name = Console.ReadLine();
-                }
-            }
-        }
-
-        private bool Exists(string name, string path)
-        {
-            bool flag = false;
-
-            if (!path.EndsWith("/"))
-                path += "/";
-
-            StreamReader reader = new StreamReader(new FileStream("FileSystem.bin", FileMode.Open));
-            string line = reader.ReadLine();
-            while (!line.Contains(separator))
-            {
-                if(line.Contains("~" + path + name + "~"))
-                {
-                    flag = true;
-                    break;
-                }
-                line = reader.ReadLine();
-            }
-            reader.Close();
-            return flag;
-        } //provjerava da li postoji fajl/folder sa istim nazivom na zadatoj putanji
-
-        private void Update()
-        {
-            byte[] content = File.ReadAllBytes("FileSystem.bin");
-            int start = 0;
-            for (int i = 0; i < content.Length; i++)
-            {
-                if (content[i] == '\n')
-                {
-                    start = i + 1;
-                    break;
-                }
-            }
-
-            usedSpace = content.Length;
-            freeSpace = MAX_SIZE_OF_FILE_SYSTEM - usedSpace;
-
-            StreamWriter writer1 = new StreamWriter(new FileStream("FileSystem.bin", FileMode.Truncate));
-            writer1.Write("HOME~" + numberOfDirectories.ToString().PadLeft(8)
-                            + "~" + numberOfFiles.ToString().PadLeft(8)
-                            + "~" + usedSpace.ToString().PadLeft(8)
-                            + "~" + freeSpace.ToString().PadLeft(8)
-                            + "~" + MAX_SIZE_OF_FILE_SYSTEM + "~" + '\n');
-            writer1.Close();
-
-            BinaryWriter writer2 = new BinaryWriter(new FileStream("FileSystem.bin", FileMode.Append));
-            for (int i = start; i < content.Length; i++)
-                writer2.Write(content[i]);
-            writer2.Close();
-        }
-
-        private int GetNewId()
-        {
-            StreamReader reader = new StreamReader(new FileStream("ListOfIdentificators.txt", FileMode.OpenOrCreate));
-            string _lastId = reader.ReadLine();
-            string content = reader.ReadToEnd();
-            reader.Close();
-
-            int lastId;
-            if(_lastId != null)
-            {
-                lastId = Convert.ToInt32(_lastId);
-            }
-            else
-            {
-                lastId = 100;
-            }
-
-            int newId = lastId + 1;
-
-            StreamWriter writer = new StreamWriter(new FileStream("ListOfIdentificators.txt", FileMode.OpenOrCreate));
-            writer.WriteLine(newId);
-            writer.WriteLine(_lastId);
-            writer.WriteLine(content);
-            writer.Close();
-
-            return newId;
-        }
     }
 }
-
-//string path = Directory.GetCurrentDirectory(); //putanja do bin foldera projekta
