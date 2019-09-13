@@ -7,7 +7,6 @@ using System.Threading.Tasks;
 
 namespace FileSystemImplementation
 {
-    //file~id~naziv~putanja~datum~velicina
     class FileOnFS
     {
         public string fileName;
@@ -51,18 +50,6 @@ namespace FileSystemImplementation
             for (int i = start; i < content.Length; i++)
                 writer3.Write(content[i]);
             writer3.Close();
-            /*
-            StreamReader reader = new StreamReader(new FileStream("FileSystem.bin", FileMode.Open));
-            string firstLine = reader.ReadLine();
-            string contentOfFS = reader.ReadToEnd();
-            reader.Close();
-
-            StreamWriter writer = new StreamWriter(new FileStream("FileSystem.bin", FileMode.Truncate));
-            writer.Write(firstLine + '\n');
-            writer.Write("file~" + fileId + "~" + fileName + "~" + filePath + "~" + dateCreated.ToString() + "~" + initialSize);
-            writer.Write('\n' + contentOfFS);
-            writer.Close();
-            */
         }
     }
 }

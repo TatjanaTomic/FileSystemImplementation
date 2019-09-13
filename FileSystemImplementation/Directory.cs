@@ -16,8 +16,7 @@ namespace FileSystemImplementation
 
         public Directory(string name, int id,  DateTime dateC, string path = "root/")
         {
-            //!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-            directoryName = name.Replace('.', '-'); //Ovo nije pametno jer ako vec postoji folder sa nazivom folder-1 a mi pokusamo dodati folder.1, proci ce, ali meni se ne da jos i to dodavati 
+            directoryName = name; 
             directoryId = id;
             directoryPath = path + directoryName;
             dateCreated = dateC;
@@ -49,18 +48,6 @@ namespace FileSystemImplementation
             for (int i = start; i < content.Length; i++)
                 writer3.Write(content[i]);
             writer3.Close();
-            /*
-            StreamReader reader = new StreamReader(new FileStream("FileSystem.bin", FileMode.Open));
-            string firstLine = reader.ReadLine();
-            string contentOfFS = reader.ReadToEnd(); //!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-            reader.Close();
-
-            StreamWriter writer = new StreamWriter(new FileStream("FileSystem.bin", FileMode.Open));
-            writer.Write(firstLine + '\n');
-            writer.Write("dir~" + directoryId + "~" + directoryName + "~" + directoryPath + "~" + dateCreated.ToString() + "~");
-            writer.Write('\n' + contentOfFS);
-            writer.Close();
-            */
         }
     }
 }
