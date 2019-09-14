@@ -14,14 +14,18 @@ namespace FileSystemImplementation
         public string filePath;
         public DateTime dateCreated;
         public int initialSize;
+        public int numberOfBlocks;
+        public int startIndex;
 
-        public FileOnFS(string name, int id, DateTime dateC, string path = "root/", int size = 0)
+        public FileOnFS(string name, int id, DateTime dateC, string path = "root/", int size = 0, int br = 0, int start = -1)
         {
             fileName = name;
             fileId = id;
             filePath = path + name;
             dateCreated = dateC;
             initialSize = size;
+            numberOfBlocks = br;
+            startIndex = start;
         }
 
         /// <summary>
@@ -38,7 +42,9 @@ namespace FileSystemImplementation
                                  + "~" + fileName
                                  + "~" + filePath
                                  + "~" + dateCreated.ToString()
-                                 + "~" + initialSize.ToString();
+                                 + "~" + initialSize.ToString()
+                                 + "~" + numberOfBlocks.ToString()
+                                 + "~" + startIndex.ToString();
 
             if (content.Length + mftRecord.Length + 1 > FileSystem.freeSpace)
             {

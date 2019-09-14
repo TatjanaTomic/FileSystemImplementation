@@ -385,7 +385,7 @@ namespace FileSystemImplementation
             {
                 //Ako korisnik želi da kreira fajl npr. na putanji root/folder1 potrebno je provjeriti da li postoji folder1
                 string tmpPath, tmpName;
-                (tmpName, tmpPath) = SplitPath(path.Substring(0, path.Length - 1)); //pošto putanja završava sa / trebam izbaciti taj znak
+                (tmpPath, tmpName) = SplitPath(path.Substring(0, path.Length - 1)); //pošto putanja završava sa / trebam izbaciti taj znak
                 if(tmpName == "" || tmpPath == "")
                 {
                     Console.WriteLine("Greska - unesena je nepostojeca putanja.");
@@ -773,12 +773,14 @@ namespace FileSystemImplementation
         private void UpdateSizeOfFile(string name, string path, int newSize)
         {
             byte[] _id = GetFileID(name, path);
+            int newNumberOfBlocks = (int)Math.Ceiling((double)(newSize/SIZE_OF_BLOCK));
+            (int startIndex, _) = GetStartAndEndPositions(_id);
 
-            int i = 0;
-            string newSizeS = newSize.ToString();
-            byte[] _newSize = new byte[newSizeS.Length];
-            foreach (var x in newSizeS)
-                _newSize[i++] = (byte)x;
+            int i;
+            char[] array = (newSize.ToString() + "~" + newNumberOfBlocks.ToString() + "~" + startIndex.ToString()).ToCharArray();
+            byte[] _array = new byte[array.Length];
+            for (i = 0; i < array.Length; i++)
+                _array[i] = Convert.ToByte(array[i]);
 
             int index1 = 0, index2 = 0;
             byte[] contentOfFS = File.ReadAllBytes("FileSystem.bin");
@@ -816,9 +818,9 @@ namespace FileSystemImplementation
             {
                 newContentOfFS.Add(contentOfFS[i]);
             }
-            for (i = 0; i < _newSize.Length; i++)
+            for (i = 0; i < _array.Length; i++)
             {
-                newContentOfFS.Add(_newSize[i]);
+                newContentOfFS.Add(_array[i]);
             }
             for (i = index2; i < contentOfFS.Length; i++)
             {
@@ -970,7 +972,7 @@ namespace FileSystemImplementation
             {
                 //Ako korisnik želi da premjesti fajl npr. na putanju root/folder1 potrebno je provjeriti da li postoji folder1
                 string tmpPath, tmpName;
-                (tmpName, tmpPath) = SplitPath(path.Substring(0, path.Length - 1)); //pošto putanja završava sa / trebam izbaciti taj znak
+                (tmpPath, tmpName) = SplitPath(path.Substring(0, path.Length - 1)); //pošto putanja završava sa / trebam izbaciti taj znak
                 if (tmpName == "" || tmpPath == "")
                 {
                     Console.WriteLine("Greska - unesena je nepostojeca putanja.");
@@ -1394,7 +1396,7 @@ namespace FileSystemImplementation
         /// </summary>
         /// <param name="pathToCheck"></param>
         /// <returns></returns>
-        private (string, string) SplitPath(string pathToCheck)
+        private (string path, string name) SplitPath(string pathToCheck)
         {
             string path = "", name = "";
             if(pathToCheck.StartsWith("root/")) //svaka validna putanja pocinje sa root
