@@ -15,7 +15,6 @@ namespace FileSystemImplementation
         public DateTime dateCreated;
         public int initialSize;
         public int numberOfBlocks;
-        public int startIndex;
 
         public FileOnFS(string name, int id, DateTime dateC, string path = "root/", int size = 0, int br = 0)
         {
