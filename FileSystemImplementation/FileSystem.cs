@@ -774,10 +774,9 @@ namespace FileSystemImplementation
         {
             byte[] _id = GetFileID(name, path);
             int newNumberOfBlocks = (int)Math.Ceiling((double)(newSize/SIZE_OF_BLOCK));
-            (int startIndex, _) = GetStartAndEndPositions(_id);
 
             int i;
-            char[] array = (newSize.ToString() + "~" + newNumberOfBlocks.ToString() + "~" + startIndex.ToString()).ToCharArray();
+            char[] array = (newSize.ToString() + "~" + newNumberOfBlocks.ToString()).ToCharArray();
             byte[] _array = new byte[array.Length];
             for (i = 0; i < array.Length; i++)
                 _array[i] = Convert.ToByte(array[i]);
@@ -930,17 +929,21 @@ namespace FileSystemImplementation
             }
 
             byte[] _id = GetFileID(name, path);
+            int size = GetSizeOfFile(name, path);
             int start;
-            (start, _) = GetStartAndEndPositions(_id);
-     
+            if (size != 0)
+                (start, _) = GetStartAndEndPositions(_id);
+            else
+                start = -1;
+
             Console.WriteLine("Naziv datoteke: " + name);
             Console.Write("ID: ");
             for (int i = 0; i < _id.Length; i++)
                 Console.Write((char)_id[i]);
             Console.WriteLine("\nPutanja: " + path + name);
             Console.WriteLine("Datum i vrijeme kreiranja: " + GetDateCreated(name, path));
-            Console.WriteLine("Velicina: " + GetSizeOfFile(name, path) + "b");
-            Console.WriteLine("Broj blokova: {0}", Math.Ceiling((double)GetSizeOfFile(name, path)/(double)SIZE_OF_BLOCK));
+            Console.WriteLine("Velicina: " + size + "b");
+            Console.WriteLine("Broj blokova: {0}", Math.Ceiling((double)size/(double)SIZE_OF_BLOCK));
             Console.WriteLine("Pocetna lokacija blokova: {0}", start);
         }
 
