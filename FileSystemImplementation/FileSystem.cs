@@ -43,7 +43,7 @@ namespace FileSystemImplementation
 
             while (true)
             {
-                Console.Write("HOME>");
+                Console.Write('\n' + "HOME>");
 
                 string line = Console.ReadLine();
                 string[] words = line.Split(' ');
@@ -1156,7 +1156,7 @@ namespace FileSystemImplementation
             {
                 while(true)
                 {
-                    Console.Write(currentPath.Replace("root", "HOME") + ">");
+                    Console.Write('\n' + currentPath.Replace("root", "HOME") + ">");
 
                     string inputLine = Console.ReadLine();
                     string[] words = inputLine.Split(' ');

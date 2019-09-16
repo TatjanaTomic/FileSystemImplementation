@@ -9,21 +9,21 @@ namespace FileSystemImplementation
 {
     class FileOnFS
     {
-        public string fileName;
-        public readonly int fileId;
-        public string filePath;
-        public DateTime dateCreated;
-        public int initialSize;
-        public int numberOfBlocks;
+        public string FileName { get; private set; }
+        public int FileId { get; private set; }
+        public string FilePath { get; private set; }
+        public DateTime DateCreated { get; private set; }
+        public int InitialSize { get; private set; }
+        public int NumberOfBlocks { get; private set; }
 
         public FileOnFS(string name, int id, DateTime dateC, string path = "root/", int size = 0, int br = 0)
         {
-            fileName = name;
-            fileId = id;
-            filePath = path + name;
-            dateCreated = dateC;
-            initialSize = size;
-            numberOfBlocks = br;
+            FileName = name;
+            FileId = id;
+            FilePath = path + name;
+            DateCreated = dateC;
+            InitialSize = size;
+            NumberOfBlocks = br;
         }
 
         /// <summary>
@@ -36,12 +36,12 @@ namespace FileSystemImplementation
         {
             byte[] content = File.ReadAllBytes("FileSystem.bin");
 
-            string mftRecord = "file~" + fileId.ToString()
-                                 + "~" + fileName
-                                 + "~" + filePath
-                                 + "~" + dateCreated.ToString()
-                                 + "~" + initialSize.ToString()
-                                 + "~" + numberOfBlocks.ToString();
+            string mftRecord = "file~" + FileId.ToString()
+                                 + "~" + FileName
+                                 + "~" + FilePath
+                                 + "~" + DateCreated.ToString()
+                                 + "~" + InitialSize.ToString()
+                                 + "~" + NumberOfBlocks.ToString();
 
             if (content.Length + mftRecord.Length + 1 > FileSystem.freeSpace)
             {
