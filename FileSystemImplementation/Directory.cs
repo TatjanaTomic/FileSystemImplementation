@@ -9,17 +9,17 @@ namespace FileSystemImplementation
 { 
     class Directory
     {
-        public string directoryName;
-        public readonly int directoryId;
-        public string directoryPath;
-        public DateTime dateCreated;
+        public string DirectoryName { get; private set; }
+        public int DirectoryId { get; private set; }
+        public string DirectoryPath { get; private set; }
+        public DateTime DateCreated { get; private set; }
 
         public Directory(string name, int id,  DateTime dateC, string path = "root/")
         {
-            directoryName = name; 
-            directoryId = id;
-            directoryPath = path + directoryName;
-            dateCreated = dateC;
+            DirectoryName = name; 
+            DirectoryId = id;
+            DirectoryPath = path + DirectoryName;
+            DateCreated = dateC;
         }
 
         /// <summary>
@@ -32,10 +32,10 @@ namespace FileSystemImplementation
         {
             byte[] content = File.ReadAllBytes("FileSystem.bin");
 
-            string mftRecord = "dir~" + directoryId.ToString()
-                                + "~" + directoryName
-                                + "~" + directoryPath
-                                + "~" + dateCreated.ToString() + "~";
+            string mftRecord = "dir~" + DirectoryId.ToString()
+                                + "~" + DirectoryName
+                                + "~" + DirectoryPath
+                                + "~" + DateCreated.ToString() + "~";
 
             if (content.Length + mftRecord.Length + 1 > FileSystem.freeSpace)
             {
